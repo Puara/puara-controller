@@ -33,3 +33,12 @@
 
 # Common build directories
 /build*/
+
+# VSCode
+.vscode/
+.vscode/settings.json
+.history/
+
+# ignore folder to accumulate trash
+ignore/
+
