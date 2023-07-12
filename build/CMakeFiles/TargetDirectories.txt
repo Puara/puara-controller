@@ -1,3 +1,0 @@
-/home/edu/Documents/Projetos/Puara/puara-joystick/build/CMakeFiles/Puara_joystick.dir
-/home/edu/Documents/Projetos/Puara/puara-joystick/build/CMakeFiles/edit_cache.dir
-/home/edu/Documents/Projetos/Puara/puara-joystick/build/CMakeFiles/rebuild_cache.dir

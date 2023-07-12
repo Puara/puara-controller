@@ -1,1 +1,0 @@
-/usr/bin/c++ -rdynamic CMakeFiles/Puara_joystick.dir/main.cpp.o -o Puara_joystick  -L/usr/lib/x86_64-linux-gnu  -lSDL2 

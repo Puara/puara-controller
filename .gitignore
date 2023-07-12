@@ -36,6 +36,9 @@
 .vscode/settings.json
 .history/
 
+# Build folder
+build*/
+
 # ignore folder to accumulate trash
 ignore/
 
