@@ -44,16 +44,16 @@ inline SDL_JoystickID getControllerInstanceID(SDL_GameController *controller) {
             SDL_GameControllerGetJoystick(controller));
 }
 
-lo::ServerThread osc_server(9000);
+//lo::ServerThread osc_server(9000);
 
-int init_OSC () {
-    osc_server.add_method("example", "i",
-                  [](lo_arg **argv, int)
-                  {std::cout << "example (" << "): "
-                             << argv[0]->i << std::endl;});
-    osc_server.start();
-    return 1;
-}
+// int init_OSC () {
+//     osc_server.add_method("example", "i",
+//                   [](lo_arg **argv, int)
+//                   {std::cout << "example (" << "): "
+//                              << argv[0]->i << std::endl;});
+//     osc_server.start();
+//     return 1;
+// }
 
 int main(int argc, char* args[]) {
 
