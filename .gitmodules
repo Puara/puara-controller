@@ -1,3 +1,3 @@
 [submodule "build/liblo"]
-	path = build/liblo
+	path = liblo
 	url = https://github.com/radarsat1/liblo.git
