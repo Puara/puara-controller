@@ -31,9 +31,6 @@
 *.out
 *.app
 
-# Common build directories
-/build*/
-
 # VSCode
 .vscode/
 .vscode/settings.json
