@@ -16,7 +16,7 @@ Dependencies:
 For Debian-based systems:
 
 ```bash
-sudo apt install libsdl2-dev steam-devices liblo-dev
+sudo apt install libsdl2-dev steam-devices liblo-dev liblo-tools
 ```
 
 Note: The `steam-devices` package adds udev rules to allow accessing motion and force feedback on the controllers. You can add these rules manually in your `/usr/lib/udev/rules.d/`folder. 

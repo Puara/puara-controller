@@ -1,34 +1,16 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.26.4)
+
+# set(LIBLO_DIR "${BUILD_DIR}/liblo/liblo-master")
+# set(LIBLO_BUILD_DIR "${LIBLO_DIR}/cmake/build/Release")
+# set(LIBLO_INCLUDES "${LIBLO_DIR}/cmake/build;${LIBLO_DIR}")
 
 project(Puara_joystick)
 
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-# Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-        message(STATUS "Submodule update")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-        endif()
-    endif()
-endif()
-
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/liblo/cmake/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-add_subdirectory(liblo/cmake)
-
-#set(LIBLO_INCLUDES "${LIBLO_DIR}/cmake/build;${LIBLO_DIR}")
-
 find_package(SDL2 REQUIRED)
+find_library(LIBLO liblo lo REQUIRED)
 
-include_directories("${SDL2_INCLUDE_DIRS}")
-#include_directories("${SDL2_INCLUDE_DIRS}" "/usr/include" "liblo" "${LIBLO_INCLUDES}")
+include_directories("${SDL2_INCLUDE_DIRS}") # "${LIBLO_INCLUDES}")
+#link_directories("${LIBLO_INCLUDES}")
 
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} liblo.a)
