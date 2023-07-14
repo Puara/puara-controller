@@ -1,10 +1,11 @@
-/* 
- * Puara Deck
- * Controller -> OSC/MIDI bridge
- *
- * SAT/Metalab & IDMIL
- * Edu Meneses (2023)
-*/
+//****************************************************************************//
+// Puara Joystick standalone - connect with game controllers using SDL2       //
+//                             Controller -> OSC/MIDI bridge                  //
+// https://github.com/Puara/puara-joystick                                    //
+// Metalab - Société des Arts Technologiques (SAT)                            //
+// Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
+// Edu Meneses (2023) - https://www.edumeneses.com                            //
+//****************************************************************************//
 
 #include "puara_joystick.hpp"
 #include <chrono>
@@ -16,7 +17,7 @@ PuaraJoystick puara;
 int main(int argc, char* args[]) {
 
     puara.initSDL2();
-    
+
     puara.initOSC ();
 
     puara.openAllControllers();
