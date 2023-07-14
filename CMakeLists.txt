@@ -9,8 +9,9 @@ project(Puara_joystick)
 find_package(SDL2 REQUIRED)
 find_library(LIBLO liblo lo REQUIRED)
 
-include_directories("${SDL2_INCLUDE_DIRS}") # "${LIBLO_INCLUDES}")
-#link_directories("${LIBLO_INCLUDES}")
+include_directories("${SDL2_INCLUDE_DIRS}" "${CMAKE_CURRENT_LIST_DIR}")
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_library(puara_joystick.hpp puara_joystick.cpp)
+
+add_executable(${PROJECT_NAME} puara_joystick.cpp main.cpp)
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} liblo.a)
