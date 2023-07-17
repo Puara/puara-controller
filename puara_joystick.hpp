@@ -24,11 +24,11 @@
 
 class PuaraJoystick {
     private:
-        std::string OSC_namespace = "/puarajoystick_";
+        std::string OSC_namespace = "/puarajoystick";
         std::string full_namespace;
         std::int32_t elapsed_time;
-        lo::ServerThread *osc_server;
         int osc_port = 8000;
+        lo::ServerThread osc_server;
         bool sdl_quit = false;
 
         /* This list is created from SDL_GameControllerButton */
@@ -43,11 +43,10 @@ class PuaraJoystick {
         std::vector<SDL_GameController*> controllers;
 
     public:
-        int initSDL2 ();
-        int initOSC ();
-        int openController(std::vector<SDL_GameController*> controller_container, int joy_index);
+        PuaraJoystick(...);
+        int openController(std::vector<SDL_GameController*> &controller_container, int joy_index);
         int openController(int joy_index);
-        std::vector<SDL_GameController*> openAllControllers(std::vector<SDL_GameController*> controller_container);
+        std::vector<SDL_GameController*> openAllControllers(std::vector<SDL_GameController*> &controller_container);
         int openAllControllers();
         void processSDLEvent(SDL_Event event);
         bool getQuit();

@@ -16,12 +16,6 @@ PuaraJoystick puara;
 
 int main(int argc, char* args[]) {
 
-    puara.initSDL2();
-
-    puara.initOSC ();
-
-    puara.openAllControllers();
-
     SDL_Event event;
 
     // Loop

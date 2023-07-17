@@ -9,28 +9,34 @@
 
 #include "puara_joystick.hpp"
 
-int PuaraJoystick::initSDL2() {
+PuaraJoystick::PuaraJoystick(...) : osc_server(osc_port) {
     std::cout << "Starting Puara Joystick..." << std::endl;
     if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) < 0) {
         std::cerr << "Could not initialize sdl2: " << SDL_GetError() << std::endl;
         exit(EXIT_FAILURE);
     } else {std::cout << "SDL2 initialized successfully" << std::endl;}
-    return 0;
-}
+    full_namespace = OSC_namespace + "/rumble";
+    osc_server.add_method(full_namespace, "iiff",
+        [&](lo_arg **argv, int) {
+            int controller = argv[0]->i;
+            int time = argv[1]->i;
+            float low_freq = argv[2]->f * 65535;
+            float hi_freq = argv[3]->f * 65535;
+            std::cout << "args: " 
+            << " " << controller 
+            << " " << time
+            << " " << low_freq
+            << " " << hi_freq
+            << std::endl;
+            SDL_GameControllerRumble(controllers.at(controller), low_freq, hi_freq, time);
+            //std::cout << "rumble! (" << "): " << argv[0]->i << std::endl;
+        });
+    osc_server.start();
+};
 
-int PuaraJoystick::initOSC() {
-    lo::ServerThread puara_st(osc_port);
-    osc_server = &puara_st;
-    osc_server->add_method("/example", "i",
-                  [](lo_arg **argv, int)
-                  {std::cout << "example (" << "): "
-                             << argv[0]->i << std::endl;});
-    osc_server->start();
-    return 0;
-}
-
-int PuaraJoystick::openController(std::vector<SDL_GameController*> controller_container, int joy_index) {
+int PuaraJoystick::openController(std::vector<SDL_GameController*> &controller_container, int joy_index) {
     if (SDL_IsGameController(joy_index)) {
+        std::cout << "\n Container size: " << controllers.size() << "\n" << std::endl;
         std::cout << "Game controller found. Opening...\n" << std::endl;
         controller_container.push_back(SDL_GameControllerOpen(joy_index));
         std::cout << "\nController \""<< SDL_GameControllerNameForIndex(joy_index) 
@@ -50,6 +56,7 @@ int PuaraJoystick::openController(std::vector<SDL_GameController*> controller_co
             std::cout << "Could not enable the gyroscope for this controller" << std::endl;
         if (SDL_GameControllerSetSensorEnabled(controller_container.back(), SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
             std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
+        std::cout << "\n New Container size: " << controllers.size() << "\n" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
@@ -58,11 +65,11 @@ int PuaraJoystick::openController(std::vector<SDL_GameController*> controller_co
 }
 
 int PuaraJoystick::openController(int joy_index) {
-    openController(controllers,joy_index);
+    openController(controllers, joy_index);
     return 0;
 }
 
-std::vector<SDL_GameController*> PuaraJoystick::openAllControllers(std::vector<SDL_GameController*> controller_container) {
+std::vector<SDL_GameController*> PuaraJoystick::openAllControllers(std::vector<SDL_GameController*> &controller_container) {
     if (SDL_NumJoysticks() == 0) {
         std::cerr << "Warning: could not find any controller" << std::endl;
         return controller_container;
@@ -94,7 +101,7 @@ void PuaraJoystick::processSDLEvent(SDL_Event event){
             }
             break;
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
-            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL_GameControllerButton_list[event.cbutton.button];
+            full_namespace = OSC_namespace + "_" + std::to_string(event.cdevice.which) + "/" + SDL_GameControllerButton_list[event.cbutton.button];
             elapsed_time = event.cbutton.timestamp - last_button_event_time[event.cbutton.button];
             last_button_event_time[event.cbutton.button] = event.cbutton.timestamp;
             std::cout << "To be sent: " << full_namespace << " " << event.cbutton.state << elapsed_time << std::endl;
@@ -108,6 +115,7 @@ void PuaraJoystick::processSDLEvent(SDL_Event event){
             std::cout << "To be sent: " << full_namespace << " " << event.csensor.data[0] << " " << event.csensor.data[1]  << " " << event.csensor.data[2] << std::endl;
             break;
     }
+    //SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(0), 65535, 65535, 1000);
 }
 
 bool PuaraJoystick::getQuit(){
