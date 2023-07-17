@@ -28,7 +28,9 @@ class PuaraJoystick {
         std::string full_namespace;
         std::int32_t elapsed_time;
         int osc_port = 8000;
+        int osc_server_port = 8000;
         lo::ServerThread osc_server;
+        //lo::Address a("localhost", "9000");
         bool sdl_quit = false;
 
         /* This list is created from SDL_GameControllerButton */
@@ -41,6 +43,9 @@ class PuaraJoystick {
         std::uint32_t last_button_event_time[sizeof(SDL_GameControllerButton_list)/sizeof(std::uint32_t)] = {0};
 
         std::vector<SDL_GameController*> controllers;
+
+        float clip(float n, float lower, float upper);
+        int clip(int n, int lower, int upper);
 
     public:
         PuaraJoystick(...);
