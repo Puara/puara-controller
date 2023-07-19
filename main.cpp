@@ -21,7 +21,7 @@ int main(int argc, char* args[]) {
     // Loop
     while (!puara.getQuit()) {
         if (SDL_PollEvent( &event ) != 0) {
-            puara.processSDLEvent(event);
+            puara.pullSDLEvent(event);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
