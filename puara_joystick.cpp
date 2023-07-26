@@ -19,6 +19,7 @@ PuaraJoystick::PuaraJoystick(...) : osc_server(osc_server_port) {
     full_namespace = OSC_namespace + "/rumble";
     libloServerMethods();
     osc_server.start();
+    last_button_event_time.insert(last_button_event_time.begin(),0,SDL2Name["button"].size());
     std::cout << "Puara Joystick started successfully" << std::endl;
 };
 
@@ -153,18 +154,18 @@ void PuaraJoystick::pullSDLEvent(SDL_Event event){
             }
             break;
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
-            full_namespace = OSC_namespace + "_" + std::to_string(event.cdevice.which) + "/" + SDL_GameControllerButton_list[event.cbutton.button];
+            full_namespace = OSC_namespace + "_" + std::to_string(event.cdevice.which) + "/" + SDL2Name["button"][event.cbutton.button];
             elapsed_time = event.cbutton.timestamp - last_button_event_time[event.cbutton.button];
             last_button_event_time[event.cbutton.button] = event.cbutton.timestamp;
             //controllers_temp[event.cdevice.which].state.
             if (verbose) std::cout << "OSC message: " << full_namespace << " " << event.cbutton.state << elapsed_time << std::endl;
             break;
         case SDL_CONTROLLERAXISMOTION:
-            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL_GameControllerAxis_list[event.caxis.axis];
+            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL2Name["axis"][event.caxis.axis];
             if (verbose) std::cout << "OSC message: " << full_namespace << " " << event.caxis.value << std::endl;
             break;
         case SDL_CONTROLLERSENSORUPDATE:
-            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL_SensorType_list[event.csensor.sensor];
+            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL2Name["sensor"][event.csensor.sensor];
             if (verbose) std::cout << "OSC message to port " << osc_port << ": " << full_namespace << " " << event.csensor.data[0] << " " << event.csensor.data[1]  << " " << event.csensor.data[2] << "\r" << std::flush;
             break;
     }
