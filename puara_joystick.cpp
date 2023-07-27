@@ -10,6 +10,14 @@
 #include "puara_joystick.hpp"
 
 std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraJoystick::SDL2Name = {
+    {"events",{ /* Supported Puara Controller SDL events */
+        {SDL_CONTROLLERDEVICEADDED,"added"},
+        {SDL_CONTROLLERDEVICEREMOVED,"removed"},
+        {SDL_CONTROLLERBUTTONDOWN,"button"},
+        {SDL_CONTROLLERBUTTONUP,"button"},
+        {SDL_CONTROLLERAXISMOTION,"axis"},
+        {SDL_CONTROLLERSENSORUPDATE,"sensor"}
+    }},
     {"button",{ /* This list is generated from SDL_GameControllerButton */
         {SDL_CONTROLLER_BUTTON_INVALID,"invalid"},
         {SDL_CONTROLLER_BUTTON_A,"A"},
@@ -53,60 +61,39 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraJoyst
     }},
 };
 
-PuaraJoystick::PuaraJoystick(...) : osc_server(osc_server_port) {
+PuaraJoystick::PuaraJoystick() {
     std::cout << "Starting Puara Joystick..." << std::endl;
     if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) < 0) {
         std::cerr << "Could not initialize sdl2: " << SDL_GetError() << std::endl;
         exit(EXIT_FAILURE);
     } else {if (verbose) std::cout << "SDL2 initialized successfully" << std::endl;}
-    //full_namespace = OSC_namespace + "/rumble";
-    libloServerMethods();
-    osc_server.start();
-    //last_button_event_time.insert(last_button_event_time.begin(),0,SDL2Name["button"].size());
     std::cout << "Puara Joystick started successfully" << std::endl;
 };
 
-void PuaraJoystick::libloServerMethods(){
-    osc_server.add_method(full_namespace, "iiff",
-        [&](lo_arg **argv, int) {
-            int id = clip(argv[0]->i, 0, (controllers_temp.size()-1));
-            int time = clip(argv[1]->i, 10, 10000);
-            float low_freq = clip(argv[2]->f, 0.0f, 1.0f) * 65535;
-            float hi_freq = clip(argv[3]->f, 0.0f, 1.0f) * 65535;
-            SDL_GameControllerRumble(controllers_temp[id].instance, low_freq, hi_freq, time);
-            if (verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
-        });
-    osc_server.add_method(full_namespace, "i",
-        [&](lo_arg **argv, int) {
-            int id = clip(argv[0]->i, 0, (controllers_temp.size()-1));
-            SDL_GameControllerRumble(controllers_temp[id].instance, 65535, 65535, 1000);
-            if (verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
-        });
-}
-
-int PuaraJoystick::createControllerInstance(int joy_index) {
-    Controller controller_instance(move_buffer_size);
-    //Controller controller_instance;
-    controllers_temp.insert({joy_index, controller_instance});
-    controllers_temp[joy_index].id = joy_index;
-    controllers_temp[joy_index].instance = SDL_GameControllerOpen(joy_index);
-
+int PuaraJoystick::rumble(int controllerID, int time=1000, float lowFreq=1.0, float hiFreq=1.0f) {
+    int rangedControllerID = clip(controllerID, 0, (controllers.size()-1));
+    int rangedTime = clip(time, 10, 10000);
+    float rangedLowFreq = clip(lowFreq, 0.0f, 1.0f) * 65535;
+    float rangedHiFreq = clip(hiFreq, 0.0f, 1.0f) * 65535;
+    SDL_GameControllerRumble(controllers[rangedControllerID].instance, rangedLowFreq, rangedHiFreq, time);
+    if (verbose) std::cout << "Controller " << rangedControllerID << " rumble!" << std::endl;
     return 0;
 }
 
 int PuaraJoystick::openController(int joy_index) {
     if (SDL_IsGameController(joy_index)) {
         std::cout << "New game controller found. Opening...\n" << std::endl;
-        //controllers_temp.insert({joy_index, SDL_GameControllerOpen(joy_index)});
-        // Controller controller_instance(move_buffer_size);
-        // //Controller controller_instance;
-        // controllers_temp.insert({joy_index, controller_instance});
-        // controllers_temp[joy_index].id = joy_index;
-        // controllers_temp[joy_index].instance = SDL_GameControllerOpen(joy_index);
         Controller controller_instance(joy_index, SDL_GameControllerOpen(joy_index), move_buffer_size);
-        if (controller_instance.isOpen)
+        controllers.insert({joy_index, controller_instance});
+        if (controllers[joy_index].isOpen) {
             std::cout << "\nController \""<< SDL_GameControllerNameForIndex(joy_index) 
-                      << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
+                      << "\" (" << joy_index << ") " << "opened successfully\n"
+                      << "Controller type: " << SDL_GameControllerTypeForIndex(joy_index) << std::endl;
+        }
+        if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
+            if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
+        if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
+            if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
         switch (SDL_GameControllerTypeForIndex(joy_index)){
             case SDL_CONTROLLER_TYPE_XBOX360: case SDL_CONTROLLER_TYPE_XBOXONE:
                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "1");
@@ -118,49 +105,12 @@ int PuaraJoystick::openController(int joy_index) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
                 break;
         }
-        if (SDL_GameControllerSetSensorEnabled(controllers_temp[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
-            if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
-        if (SDL_GameControllerSetSensorEnabled(controllers_temp[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
-            if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
         return 1;
     } 
 }
-
-// int PuaraJoystick::openController(std::vector<SDL_GameController*> &controller_container, int joy_index) {
-//     if (SDL_IsGameController(joy_index)) {
-//         std::cout << "New game controller found. Opening...\n" << std::endl;
-//         controller_container.push_back(SDL_GameControllerOpen(joy_index));
-//         std::cout << "\nController \""<< SDL_GameControllerNameForIndex(joy_index) 
-//                     << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
-//         switch (SDL_GameControllerTypeForIndex(joy_index)){
-//             case SDL_CONTROLLER_TYPE_XBOX360: case SDL_CONTROLLER_TYPE_XBOXONE:
-//                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "1");
-//                 break;
-//             case SDL_CONTROLLER_TYPE_PS4:
-//                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
-//                 break;
-//             case SDL_CONTROLLER_TYPE_PS5:
-//                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
-//                 break;
-//         }
-//         if (SDL_GameControllerSetSensorEnabled(controller_container.back(), SDL_SENSOR_GYRO, SDL_TRUE) < 0)
-//             if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
-//         if (SDL_GameControllerSetSensorEnabled(controller_container.back(), SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
-//             if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
-//         return 0;
-//     } else {
-//         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
-//         return 1;
-//     } 
-// }
-
-// int PuaraJoystick::openController(int joy_index) {
-//     openController(controllers, joy_index);
-//     return 0;
-// }
 
 int PuaraJoystick::openAllControllers() {
     if (SDL_NumJoysticks() == 0) {
@@ -172,21 +122,6 @@ int PuaraJoystick::openAllControllers() {
     return 0;
 }
 
-// std::vector<SDL_GameController*> PuaraJoystick::openAllControllers(std::vector<SDL_GameController*> &controller_container) {
-//     if (SDL_NumJoysticks() == 0) {
-//         std::cerr << "Warning: could not find any controller" << std::endl;
-//         return controller_container;
-//     }
-//     for (int i = 0; i < SDL_NumJoysticks(); i++)
-//         openController(controller_container, i);
-//     return controller_container;
-// }
-
-// int PuaraJoystick::openAllControllers() {
-//     openAllControllers(controllers);
-//     return 0;
-// }
-
 float PuaraJoystick::clip(float n, float lower, float upper) {
   return std::max(lower, std::min(n, upper));
 }
@@ -195,7 +130,12 @@ int PuaraJoystick::clip(int n, int lower, int upper) {
   return std::max(lower, std::min(n, upper));
 }
 
-void PuaraJoystick::pullSDLEvent(SDL_Event event){
+PuaraJoystick::EventResume PuaraJoystick::pullSDLEvent(SDL_Event event){
+    EventResume answer = {
+        .controller = event.cdevice.which,
+        .eventType = event.type,
+        .eventAction = 0
+    };
     if (event.type == SDL_QUIT) {
         sdl_quit = true;
     } else if (event.type == SDL_CONTROLLERDEVICEADDED) {
@@ -203,34 +143,108 @@ void PuaraJoystick::pullSDLEvent(SDL_Event event){
     }
     switch (event.type) {
         case SDL_CONTROLLERDEVICEREMOVED:
-            for (auto controller : controllers_temp) {
-                SDL_GameControllerClose(controllers_temp[event.cdevice.which].instance);
-                controllers_temp.erase(event.cdevice.which);
+            for (auto controller : controllers) {
+                SDL_GameControllerClose(controllers[event.cdevice.which].instance);
+                controllers.erase(event.cdevice.which);
                 if (verbose) std::cout << "Controller " << event.cdevice.which << "vanished!" << std::endl;
             }
             break;
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
-            //std::cout << "Event" << std::endl;
-            full_namespace = OSC_namespace + "_" + std::to_string(event.cdevice.which) + "/" + SDL2Name["button"][event.cbutton.button];
             // elapsed_time = event.cbutton.timestamp - last_button_event_time[event.cbutton.button];
             // last_button_event_time[event.cbutton.button] = event.cbutton.timestamp;
-            // //controllers_temp[event.cdevice.which].state.
-            //if (verbose) std::cout << "OSC message: " << full_namespace << " " << event.cbutton.state << elapsed_time << std::endl;
-            std::cout << event.cbutton.state << std::endl;
-            if (verbose) std::cout << "OSC message: " << full_namespace << " " << event.cbutton.state << std::endl;
+            controllers[event.cdevice.which].state.button[event.cbutton.button] = event.cbutton.state;
+            answer.eventAction = event.cbutton.button;
             break;
         case SDL_CONTROLLERAXISMOTION:
-            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL2Name["axis"][event.caxis.axis];
-            if (verbose) std::cout << "OSC message: " << full_namespace << " " << event.caxis.value << std::endl;
+            switch (event.caxis.axis) {
+                case SDL_CONTROLLER_AXIS_LEFTX:
+                    controllers[event.cdevice.which].state.analogL.X = event.caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_LEFTY:
+                    controllers[event.cdevice.which].state.analogL.Y = event.caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTX:
+                    controllers[event.cdevice.which].state.analogR.X = event.caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTY:
+                    controllers[event.cdevice.which].state.analogR.Y = event.caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                    controllers[event.cdevice.which].state.triggerL = event.caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                    controllers[event.cdevice.which].state.triggerR = event.caxis.value;
+                    break;
+            }
+            answer.eventAction = event.caxis.axis;
             break;
         case SDL_CONTROLLERSENSORUPDATE:
-            full_namespace = OSC_namespace + std::to_string(event.cdevice.which) + "/" + SDL2Name["sensor"][event.csensor.sensor];
-            if (verbose) std::cout << "OSC message to port " << osc_port << ": " << full_namespace << " " << event.csensor.data[0] << " " << event.csensor.data[1]  << " " << event.csensor.data[2] << "\r" << std::flush;
+            if (event.csensor.sensor == SDL_SENSOR_ACCEL) {
+                controllers[event.cdevice.which].state.accel.X = event.csensor.data[0];
+                controllers[event.cdevice.which].state.accel.Y = event.csensor.data[1];
+                controllers[event.cdevice.which].state.accel.Z = event.csensor.data[2];
+            };
+            if (event.csensor.sensor == SDL_SENSOR_GYRO) {
+                controllers[event.cdevice.which].state.gyro.X = event.csensor.data[0];
+                controllers[event.cdevice.which].state.gyro.Y = event.csensor.data[1];
+                controllers[event.cdevice.which].state.gyro.Z = event.csensor.data[2];
+            };
+            answer.eventAction = event.csensor.sensor;
+            break;
+    }
+    return answer;
+}
+
+void PuaraJoystick::printEvent(PuaraJoystick::EventResume eventResume, bool printSensor) {
+    switch (eventResume.eventType) {
+        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+            std::cout << "Event on controller " << eventResume.controller
+                      << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction]
+                      << " " << controllers[eventResume.controller].state.button[eventResume.eventAction] << std::endl;
+            break;
+        case SDL_CONTROLLERAXISMOTION:
+            std::cout << "Event on controller " << eventResume.controller
+                      << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction];
+            switch (eventResume.eventAction) {
+                case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
+                    std::cout << " " << controllers[eventResume.controller].state.analogL.X << " "
+                              << controllers[eventResume.controller].state.analogL.Y << std::endl;
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
+                    std::cout << " " << controllers[eventResume.controller].state.analogR.X << " "
+                              << controllers[eventResume.controller].state.analogR.Y << std::endl;
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                    std::cout << " " << controllers[eventResume.controller].state.triggerL << std::endl;
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                    std::cout << " " << controllers[eventResume.controller].state.triggerR << std::endl;
+                    break;
+            }
+            break;
+        case SDL_CONTROLLERSENSORUPDATE:
+            if (printSensor) {
+                std::cout << "Event on controller " << eventResume.controller
+                        << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction];
+                if (eventResume.eventAction == SDL_SENSOR_ACCEL) {
+                    std::cout << " " << controllers[eventResume.controller].state.accel.X
+                            << " " << controllers[eventResume.controller].state.accel.Y 
+                            << " " << controllers[eventResume.controller].state.accel.Z << std::endl;
+                } else if (eventResume.eventAction == SDL_SENSOR_GYRO) {
+                    std::cout << " " << controllers[eventResume.controller].state.gyro.X
+                            << " " << controllers[eventResume.controller].state.gyro.Y 
+                            << " " << controllers[eventResume.controller].state.gyro.Z << std::endl;
+                }
+            }
             break;
     }
 }
 
-bool PuaraJoystick::getQuit(){
+void PuaraJoystick::printEvent(PuaraJoystick::EventResume eventResume) {
+    printEvent(eventResume, false);
+}
+
+bool PuaraJoystick::doQuit(){
     return sdl_quit; 
 }
 
@@ -276,21 +290,7 @@ PuaraJoystick::Controller::Controller(int id, SDL_GameController* instance, int 
             state.button.insert({i.first,0});
             state.last_button_event_duration.insert({i.first,0});
         }
+        for (auto const& i: PuaraJoystick::SDL2Name["axis"])
+            state.axis.insert({i.first,0});
         isOpen = true;
-}
-
-template <typename Key, typename Value>
-void PuaraJoystick::ReversibleMap<Key, Value>::insert(const Key& key, const Value& value) {
-    forwardMap[key] = value;
-    reverseMap[value] = key;
-}
-
-template <typename Key, typename Value>
-const Value& PuaraJoystick::ReversibleMap<Key, Value>::operator[](const Key& key) const {
-    return forwardMap.at(key);
-}
-
-template <typename Key, typename Value>
-const Key& PuaraJoystick::ReversibleMap<Key, Value>::reverseLookup(const Value& value) const {
-    return reverseMap.at(value);
 }
