@@ -7,12 +7,12 @@
 // Edu Meneses (2023) - https://www.edumeneses.com                            //
 //****************************************************************************//
 
-#include "puara_joystick.hpp"
+#include "puara_controller.hpp"
 #include <chrono>
 #include <thread>
 
 // Initialize Puara's jostick module
-PuaraJoystick puara;
+PuaraController puara;
 
 int main(int argc, char* args[]) {
 

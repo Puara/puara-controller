@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.26.4)
 
-project(Puara_joystick)
+project(puara_controller)
 
 find_package(SDL2 REQUIRED)
 find_library(LIBLO liblo lo REQUIRED)
 
 include_directories("${SDL2_INCLUDE_DIRS}" "${CMAKE_CURRENT_LIST_DIR}")
 
-add_library(puara_joystick.hpp puara_joystick.cpp)
+add_library(puara_controller.hpp puara_controller.cpp)
 
-add_executable(${PROJECT_NAME} puara_joystick.cpp main.cpp)
+add_executable(${PROJECT_NAME} puara_controller.cpp main.cpp)
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} liblo.a)
