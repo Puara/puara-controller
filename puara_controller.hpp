@@ -33,7 +33,7 @@ class PuaraController {
         bool verbose = true;
         int move_buffer_size = 10;
         int analogDeadZone = 128;
-    private:
+    
         template<typename T>
         class CircularBuffer {
             public:
@@ -106,27 +106,26 @@ class PuaraController {
             bool rumble;
         };
 
-        std::string full_namespace_;
-        std::int32_t elapsed_time_;
-        bool sdl_quit_ = false;
-        static std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name_;
-
         class Controller {
             public:
                 Controller() = default;
                 explicit Controller(int move_buffer_size) : buffer(move_buffer_size) {};
                 Controller(int id, SDL_GameController* instance, int move_buffer_size);
+                ControllerState state;
             private:
                 friend class PuaraController;
                 bool isOpen = false;
                 int id;
                 SDL_GameController* instance;
-                ControllerState state;
                 CircularBuffer<ControllerState> buffer;
         };
 
-        std::unordered_map<int, Controller> controllers_;
+        std::unordered_map<int, Controller> controllers;
 
+    private:
+        std::int32_t elapsed_time_;
+        bool sdl_quit_ = false;
+        static std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name_;
         float clip_(float n, float lower, float upper);
         int clip_(int n, int lower, int upper);
         double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
