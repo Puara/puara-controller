@@ -19,6 +19,7 @@ int main(int argc, char* args[]) {
     SDL_Event event;
 
     // Loop
+
     while (!puara.doQuit()) {
         if (SDL_PollEvent( &event ) != 0) {
             puara.printEvent(puara.pullSDLEvent(event));

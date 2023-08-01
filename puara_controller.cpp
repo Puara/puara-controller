@@ -40,7 +40,7 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
         {SDL_CONTROLLER_BUTTON_PADDLE2,"paddle2"},
         {SDL_CONTROLLER_BUTTON_PADDLE3,"paddle3"},
         {SDL_CONTROLLER_BUTTON_PADDLE4,"paddle4"},
-        {SDL_CONTROLLER_BUTTON_TOUCHPAD,"touchpad"},
+        {SDL_CONTROLLER_BUTTON_TOUCHPAD,"touchpadbutton"},
         {SDL_CONTROLLER_BUTTON_MAX,"max_btn"}
     }},
     {"axis",{ /* This list is generated from SDL_GameControllerAxis */
@@ -104,6 +104,11 @@ int PuaraController::openController(int joy_index) {
                 SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
                 break;
         }
+        std::cout << "This controleer has "
+                  << SDL_GameControllerGetNumTouchpads(controllers_[joy_index].instance)
+                  << " touchpads and can use up to "
+                  << SDL_GameControllerGetNumTouchpadFingers(controllers_[joy_index].instance, 0)
+                  << " fingers simultaneusly" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
@@ -210,6 +215,24 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
             }
             answer.eventAction = event.caxis.axis;
             break;
+        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+            controllers_[event.cdevice.which].state.touch.action = event.type;
+            controllers_[event.cdevice.which].state.touch.touchId = event.tfinger.touchId;
+            controllers_[event.cdevice.which].state.touch.fingerId = event.tfinger.fingerId;
+            controllers_[event.cdevice.which].state.touch.X = event.tfinger.x;
+            controllers_[event.cdevice.which].state.touch.Y = event.tfinger.y;
+            controllers_[event.cdevice.which].state.touch.dX = event.tfinger.dx;
+            controllers_[event.cdevice.which].state.touch.dY = event.tfinger.dy;
+            controllers_[event.cdevice.which].state.touch.pressure = event.tfinger.pressure;
+            break;
+        case SDL_MULTIGESTURE:
+            controllers_[event.cdevice.which].state.multitouch.touchId = event.mgesture.touchId;
+            controllers_[event.cdevice.which].state.multitouch.dTheta = event.mgesture.dTheta;
+            controllers_[event.cdevice.which].state.multitouch.dDist = event.mgesture.dDist;
+            controllers_[event.cdevice.which].state.multitouch.X = event.mgesture.x;
+            controllers_[event.cdevice.which].state.multitouch.Y = event.mgesture.y;
+            controllers_[event.cdevice.which].state.multitouch.numFingers = event.mgesture.numFingers;
+            break;
         case SDL_CONTROLLERSENSORUPDATE:
             if (event.csensor.sensor == SDL_SENSOR_ACCEL) {
                 controllers_[event.cdevice.which].state.accel.X = event.csensor.data[0];
@@ -236,8 +259,7 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
                       << " " << controllers_[eventResume.controller].state.button[eventResume.eventAction].event_duration << std::endl;
             break;
         case SDL_CONTROLLERAXISMOTION:
-            std::cout << "Event on controller " << eventResume.controller
-                      << ": ";
+            std::cout << "Event on controller " << eventResume.controller << ": ";
             switch (eventResume.eventAction) {
                 case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
                     std::cout << " Analog_left " << controllers_[eventResume.controller].state.analogL.X << " "
@@ -259,10 +281,32 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
                     break;
             }
             break;
+        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+        std::cout << "Event on controller " << eventResume.controller << ": ";
+            std::cout << " Touchpad " << controllers_[eventResume.controller].state.touch.touchId << ":"
+                      << " ID: " << controllers_[eventResume.controller].state.touch.fingerId
+                      << "  X: " << controllers_[eventResume.controller].state.touch.X
+                      << "  Y: " << controllers_[eventResume.controller].state.touch.Y
+                      << " dX: " << controllers_[eventResume.controller].state.touch.dX
+                      << " dY: " << controllers_[eventResume.controller].state.touch.dY
+                      << " pr: " << controllers_[eventResume.controller].state.touch.pressure
+                      << std::endl;
+            break;
+        case SDL_MULTIGESTURE:
+        std::cout << "Event on controller " << eventResume.controller << ": ";
+            std::cout << " Multigesture " << controllers_[eventResume.controller].state.touch.touchId << ":"
+                      << " ID: " << controllers_[eventResume.controller].state.multitouch.touchId
+                      << "  X: " << controllers_[eventResume.controller].state.multitouch.dTheta
+                      << "  Y: " << controllers_[eventResume.controller].state.multitouch.dDist
+                      << " dX: " << controllers_[eventResume.controller].state.multitouch.X
+                      << " dY: " << controllers_[eventResume.controller].state.multitouch.Y
+                      << " pr: " << controllers_[eventResume.controller].state.multitouch.numFingers
+                      << std::endl;
+            break;
         case SDL_CONTROLLERSENSORUPDATE:
             if (printSensor) {
                 std::cout << "Event on controller " << eventResume.controller
-                        << ": " << SDL2Name_[SDL2Name_["events"][eventResume.eventType]][eventResume.eventAction];
+                          << ": " << SDL2Name_[SDL2Name_["events"][eventResume.eventType]][eventResume.eventAction];
                 if (eventResume.eventAction == SDL_SENSOR_ACCEL) {
                     std::cout << " " << controllers_[eventResume.controller].state.accel.X
                             << " " << controllers_[eventResume.controller].state.accel.Y 
@@ -341,7 +385,6 @@ bool PuaraController::isSensorChanged_(int joy_index, std::string sensor, std::s
             answer = convertedValue != controllers_[joy_index].state.triggerL.state;
             if (answer)
                 controllers_[joy_index].state.triggerL.state = !controllers_[joy_index].state.triggerL.state;
-                std::cout << " new state: " << controllers_[joy_index].state.triggerL.state << std::endl;
         } else if (side == "r") {
             if (controllers_[joy_index].state.triggerR.value != 0) {
                 convertedValue = true;

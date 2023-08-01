@@ -17,11 +17,6 @@
 #include <vector>
 #include <unordered_map>
 
-// #include <lo/lo.h>
-// #include <lo/lo_cpp.h>
-
-// #include <chrono>
-// #include <thread>
 
 class PuaraController {
     public:
@@ -68,9 +63,9 @@ class PuaraController {
             long int event_timestamp = 0;
         };
         struct Sensor {
-            float X = 0;
-            float Y = 0;
-            float Z = 0;
+            float X = 0.0;
+            float Y = 0.0;
+            float Z = 0.0;
             int event_duration = 0; 
             long int event_timestamp = 0;
         };
@@ -81,12 +76,33 @@ class PuaraController {
             int event_duration = 0; 
             long int event_timestamp = 0;
         };
-
+        struct Touch {
+            int action = 0;
+            int touchId = 0;
+            int fingerId = 0;
+            float X = 0.0;
+            float Y = 0.0;
+            float dX = 0.0;
+            float dY = 0.0;
+            float pressure = 0.0;
+            int event_duration = 0; 
+            long int event_timestamp = 0;
+        };
+        struct MultiTouch {
+            int touchId = 0;
+            float dTheta = 0.0;
+            float dDist = 0.0;
+            float X = 0.0;
+            float Y = 0.0;
+            int numFingers = 0;
+        };
         struct ControllerState {
             std::unordered_map<int, Button> button;
             Sensor accel, gyro;
             Axis analogR, analogL;
             Trigger triggerL, triggerR;
+            Touch touch;
+            MultiTouch multitouch;
             bool rumble;
         };
 
