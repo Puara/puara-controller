@@ -33,6 +33,7 @@ class PuaraController {
         bool verbose = true;
         int move_buffer_size = 10;
         int analogDeadZone = 128;
+        bool enableMotion = true;
     
         template<typename T>
         class CircularBuffer {
@@ -121,11 +122,11 @@ class PuaraController {
         };
 
         std::unordered_map<int, Controller> controllers;
+        static std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name;
 
     private:
         std::int32_t elapsed_time_;
         bool sdl_quit_ = false;
-        static std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name_;
         float clip_(float n, float lower, float upper);
         int clip_(int n, int lower, int upper);
         double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);

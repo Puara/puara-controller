@@ -9,14 +9,18 @@
 
 #include "puara_controller.hpp"
 
-std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraController::SDL2Name_ = {
+std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraController::SDL2Name = {
     {"events",{ /* Supported Puara Controller SDL events */
         {SDL_CONTROLLERDEVICEADDED,"added"},
         {SDL_CONTROLLERDEVICEREMOVED,"removed"},
         {SDL_CONTROLLERBUTTONDOWN,"button"},
         {SDL_CONTROLLERBUTTONUP,"button"},
         {SDL_CONTROLLERAXISMOTION,"axis"},
-        {SDL_CONTROLLERSENSORUPDATE,"sensor"}
+        {SDL_CONTROLLERSENSORUPDATE,"sensor"},
+        {SDL_CONTROLLERTOUCHPADDOWN,"touch"},
+        {SDL_CONTROLLERTOUCHPADMOTION,"touch"},
+        {SDL_CONTROLLERTOUCHPADUP,"touch"},
+        //{SDL_MULTIGESTURE,"touch"}
     }},
     {"button",{ /* This list is generated from SDL_GameControllerButton */
         {SDL_CONTROLLER_BUTTON_INVALID,"invalid"},
@@ -59,6 +63,9 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
         {SDL_SENSOR_ACCEL,"accel"},
         {SDL_SENSOR_GYRO,"gyro"}
     }},
+    {"touch",{ /* This list allows pushing the sensor name for the touchpad */
+        {0,"touch"}
+    }}
 };
 
 PuaraController::PuaraController() {
@@ -89,26 +96,28 @@ int PuaraController::openController(int joy_index) {
             std::cout << "\nController \""<< SDL_GameControllerNameForIndex(joy_index) 
                       << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
         }
-        if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
-            if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
-        if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
-            if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
-        switch (SDL_GameControllerTypeForIndex(joy_index)){
-            case SDL_CONTROLLER_TYPE_XBOX360: case SDL_CONTROLLER_TYPE_XBOXONE:
-                SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "1");
-                break;
-            case SDL_CONTROLLER_TYPE_PS4:
-                SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
-                break;
-            case SDL_CONTROLLER_TYPE_PS5:
-                SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
-                break;
+        if (enableMotion) {
+            if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
+                if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
+            if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
+                if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
+            switch (SDL_GameControllerTypeForIndex(joy_index)){
+                case SDL_CONTROLLER_TYPE_XBOX360: case SDL_CONTROLLER_TYPE_XBOXONE:
+                    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "1");
+                    break;
+                case SDL_CONTROLLER_TYPE_PS4:
+                    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
+                    break;
+                case SDL_CONTROLLER_TYPE_PS5:
+                    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
+                    break;
+            }
         }
-        std::cout << "This controleer has "
+        std::cout << "This controller has "
                   << SDL_GameControllerGetNumTouchpads(controllers[joy_index].instance)
-                  << " touchpads and can use up to "
+                  << " touchpad(s) and can use up to "
                   << SDL_GameControllerGetNumTouchpadFingers(controllers[joy_index].instance, 0)
-                  << " fingers simultaneusly" << std::endl;
+                  << " finger(s) simultaneusly" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
@@ -216,6 +225,7 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
             answer.eventAction = event.caxis.axis;
             break;
         case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+            answer.eventAction = 0;
             controllers[event.cdevice.which].state.touch.action = event.type;
             controllers[event.cdevice.which].state.touch.touchId = event.tfinger.touchId;
             controllers[event.cdevice.which].state.touch.fingerId = event.tfinger.fingerId;
@@ -225,14 +235,14 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
             controllers[event.cdevice.which].state.touch.dY = event.tfinger.dy;
             controllers[event.cdevice.which].state.touch.pressure = event.tfinger.pressure;
             break;
-        case SDL_MULTIGESTURE:
-            controllers[event.cdevice.which].state.multitouch.touchId = event.mgesture.touchId;
-            controllers[event.cdevice.which].state.multitouch.dTheta = event.mgesture.dTheta;
-            controllers[event.cdevice.which].state.multitouch.dDist = event.mgesture.dDist;
-            controllers[event.cdevice.which].state.multitouch.X = event.mgesture.x;
-            controllers[event.cdevice.which].state.multitouch.Y = event.mgesture.y;
-            controllers[event.cdevice.which].state.multitouch.numFingers = event.mgesture.numFingers;
-            break;
+        // case SDL_MULTIGESTURE:
+        //     controllers[event.cdevice.which].state.multitouch.touchId = event.mgesture.touchId;
+        //     controllers[event.cdevice.which].state.multitouch.dTheta = event.mgesture.dTheta;
+        //     controllers[event.cdevice.which].state.multitouch.dDist = event.mgesture.dDist;
+        //     controllers[event.cdevice.which].state.multitouch.X = event.mgesture.x;
+        //     controllers[event.cdevice.which].state.multitouch.Y = event.mgesture.y;
+        //     controllers[event.cdevice.which].state.multitouch.numFingers = event.mgesture.numFingers;
+        //     break;
         case SDL_CONTROLLERSENSORUPDATE:
             if (event.csensor.sensor == SDL_SENSOR_ACCEL) {
                 controllers[event.cdevice.which].state.accel.X = event.csensor.data[0];
@@ -246,6 +256,9 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
             };
             answer.eventAction = event.csensor.sensor;
             break;
+        default:
+            answer.eventAction = -1;
+            break;
     }
     return answer;
 }
@@ -254,7 +267,7 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
     switch (eventResume.eventType) {
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
             std::cout << "Event on controller " << eventResume.controller
-                      << ": " << SDL2Name_[SDL2Name_["events"][eventResume.eventType]][eventResume.eventAction]
+                      << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction]
                       << " " << controllers[eventResume.controller].state.button[eventResume.eventAction].value
                       << " " << controllers[eventResume.controller].state.button[eventResume.eventAction].event_duration << std::endl;
             break;
@@ -292,21 +305,21 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
                     //   << " pr: " << controllers[eventResume.controller].state.touch.pressure
                       << std::endl;
             break;
-        case SDL_MULTIGESTURE:
-        std::cout << "Event on controller " << eventResume.controller << ": ";
-            std::cout << " Multigesture " << controllers[eventResume.controller].state.touch.touchId << ":"
-                      << " ID: " << controllers[eventResume.controller].state.multitouch.touchId
-                      << "  X: " << controllers[eventResume.controller].state.multitouch.dTheta
-                      << "  Y: " << controllers[eventResume.controller].state.multitouch.dDist
-                      << " dX: " << controllers[eventResume.controller].state.multitouch.X
-                      << " dY: " << controllers[eventResume.controller].state.multitouch.Y
-                      << " pr: " << controllers[eventResume.controller].state.multitouch.numFingers
-                      << std::endl;
-            break;
+        // case SDL_MULTIGESTURE:
+        // std::cout << "Event on controller " << eventResume.controller << ": ";
+        //     std::cout << " Multigesture " << controllers[eventResume.controller].state.touch.touchId << ":"
+        //               << " ID: " << controllers[eventResume.controller].state.multitouch.touchId
+        //               << "  X: " << controllers[eventResume.controller].state.multitouch.dTheta
+        //               << "  Y: " << controllers[eventResume.controller].state.multitouch.dDist
+        //               << " dX: " << controllers[eventResume.controller].state.multitouch.X
+        //               << " dY: " << controllers[eventResume.controller].state.multitouch.Y
+        //               << " pr: " << controllers[eventResume.controller].state.multitouch.numFingers
+        //               << std::endl;
+        //     break;
         case SDL_CONTROLLERSENSORUPDATE:
             if (printSensor) {
                 std::cout << "Event on controller " << eventResume.controller
-                          << ": " << SDL2Name_[SDL2Name_["events"][eventResume.eventType]][eventResume.eventAction];
+                          << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction];
                 if (eventResume.eventAction == SDL_SENSOR_ACCEL) {
                     std::cout << " " << controllers[eventResume.controller].state.accel.X
                             << " " << controllers[eventResume.controller].state.accel.Y 
@@ -367,7 +380,7 @@ T PuaraController::CircularBuffer<T>::pop() {
 
 PuaraController::Controller::Controller(int id, SDL_GameController* instance, int move_buffer_size) 
     : id(id), instance(instance), buffer(move_buffer_size) {
-        for (auto const& i: PuaraController::SDL2Name_["button"]) {
+        for (auto const& i: PuaraController::SDL2Name["button"]) {
             Button btnInstance;
             state.button.insert({i.first, btnInstance});
         }
