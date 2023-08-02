@@ -25,7 +25,7 @@ bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disableMotion = true;
+bool disableMotion = false;
 
 std::atomic<bool> keepRunning(true);
 std::condition_variable cv;
@@ -140,14 +140,12 @@ int main() {
 
     libloServerMethods();
 
-    // if (!osc_server.is_valid()) {
-    //     std::cerr << "Error, liblo OSC server did not initialized correctly" << std::endl;
-    //     return 1;
-    // } else {
-    //     osc_server.start();
-    //     std::cout << "Liblo server started" << std::endl;
-    //     return 0;
-    // }
+    if (!osc_server.is_valid()) {
+        std::cerr << "Error, liblo OSC server did not initialized correctly."
+                  << " This program cannot accept OSC messages" << std::endl;
+    } else {
+        osc_server.start();
+    }
 
     puaracontroller.verbose = verbose;
     puaracontroller.enableMotion = !disableMotion;
