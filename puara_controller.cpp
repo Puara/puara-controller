@@ -1,5 +1,5 @@
 //****************************************************************************//
-// Puara Joystick module - connect with game controllers using SDL2 (cpp)     //
+// Puara Controller module - connect with game controllers using SDL2 (cpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
 // https://github.com/Puara/puara-joystick                                    //
 // Metalab - Société des Arts Technologiques (SAT)                            //
@@ -49,10 +49,10 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
     }},
     {"axis",{ /* This list is generated from SDL_GameControllerAxis */
         {SDL_CONTROLLER_AXIS_INVALID,"invalid"},
-        {SDL_CONTROLLER_AXIS_LEFTX,"leftx"},
-        {SDL_CONTROLLER_AXIS_LEFTY,"lefty"},
-        {SDL_CONTROLLER_AXIS_RIGHTX,"rightx"},
-        {SDL_CONTROLLER_AXIS_RIGHTY,"righty"},
+        {SDL_CONTROLLER_AXIS_LEFTX,"analogleft"},
+        {SDL_CONTROLLER_AXIS_LEFTY,"analogleft"},
+        {SDL_CONTROLLER_AXIS_RIGHTX,"analogright"},
+        {SDL_CONTROLLER_AXIS_RIGHTY,"analogright"},
         {SDL_CONTROLLER_AXIS_TRIGGERLEFT,"triggerleft"},
         {SDL_CONTROLLER_AXIS_TRIGGERRIGHT,"triggerright"},
         {SDL_CONTROLLER_AXIS_MAX,"max_axis"}

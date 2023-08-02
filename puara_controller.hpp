@@ -1,5 +1,5 @@
 //****************************************************************************//
-// Puara Joystick module - connect with game controllers using SDL2 (hpp)     //
+// Puara Controller module - connect with game controllers using SDL2 (hpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
 // https://github.com/Puara/puara-joystick                                    //
 // Metalab - Société des Arts Technologiques (SAT)                            //

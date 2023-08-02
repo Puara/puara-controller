@@ -1,5 +1,5 @@
 //****************************************************************************//
-// Puara Joystick standalone - connect with game controllers using SDL2       //
+// Puara Controller standalone - connect with game controllers using SDL2     //
 //                             Controller -> OSC/MIDI bridge                  //
 // https://github.com/Puara/puara-joystick                                    //
 // Metalab - Société des Arts Technologiques (SAT)                            //
@@ -25,7 +25,7 @@ bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disableMotion = false;
+bool disableMotion = true;
 
 std::atomic<bool> keepRunning(true);
 std::condition_variable cv;

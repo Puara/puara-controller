@@ -8,7 +8,7 @@ This program converts game controller data into OSC.
   - [Current OSC namespace](#current-osc-namespace)
     - [Messages sending value and duration of the last event:](#messages-sending-value-and-duration-of-the-last-event)
     - [Messages sending values (x and y) + duration of the last event:](#messages-sending-values-x-and-y--duration-of-the-last-event)
-    - [Messages sending x, y and z values:](#messages-sending-x-y-and-z-values)
+    - [Messages sending x, y, and z values:](#messages-sending-x-y-and-z-values)
     - [The program also receives (port 9000)](#the-program-also-receives-port-9000)
 
 ## To compile
@@ -81,14 +81,14 @@ Default port: 9001
 
 ### Messages sending values (x and y) + duration of the last event:
 
-* /puaracontroller/0/leftx iii
-* /puaracontroller/0/rightx iii
+* /puaracontroller/0/analogleft iii
+* /puaracontroller/0/analogright iii
 
-### Messages sending x, y and z values:
+### Messages sending x, y, and z values:
 
 * /puaracontroller/0/accel fff
 * /puaracontroller/0/gyro fff
 
 ### The program also receives (port 9000)
 
-*/puaracontroller/rumble iiff (controllerID, time, low_freq, hi_freq)
+* /puaracontroller/rumble iiff (controllerID, time, low_freq, hi_freq)
