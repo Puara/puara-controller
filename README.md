@@ -62,33 +62,33 @@ Default port: 9001
 
 ### Messages sending value and duration of the last event:
 
-/puaracontroller/0/A ii
-/puaracontroller/0/A ii
-/puaracontroller/0/B ii
-/puaracontroller/0/B ii
-/puaracontroller/0/X ii
-/puaracontroller/0/X ii
-/puaracontroller/0/Y ii
-/puaracontroller/0/Y ii
-/puaracontroller/0/leftshoulder ii
-/puaracontroller/0/rightshoulder ii
-/puaracontroller/0/dpad_up ii
-/puaracontroller/0/dpad_down ii
-/puaracontroller/0/dpad_left ii
-/puaracontroller/0/dpad_right ii
-/puaracontroller/0/triggerleft ii
-/puaracontroller/0/triggerright ii
+* /puaracontroller/0/A ii
+* /puaracontroller/0/A ii
+* /puaracontroller/0/B ii
+* /puaracontroller/0/B ii
+* /puaracontroller/0/X ii
+* /puaracontroller/0/X ii
+* /puaracontroller/0/Y ii
+* /puaracontroller/0/Y ii
+* /puaracontroller/0/leftshoulder ii
+* /puaracontroller/0/rightshoulder ii
+* /puaracontroller/0/dpad_up ii
+* /puaracontroller/0/dpad_down ii
+* /puaracontroller/0/dpad_left ii
+* /puaracontroller/0/dpad_right ii
+* /puaracontroller/0/triggerleft ii
+* /puaracontroller/0/triggerright ii
 
 ### Messages sending values (x and y) + duration of the last event:
 
-/puaracontroller/0/leftx iii
-/puaracontroller/0/rightx iii
+* /puaracontroller/0/leftx iii
+* /puaracontroller/0/rightx iii
 
 ### Messages sending x, y and z values:
 
-/puaracontroller/0/accel fff
-/puaracontroller/0/gyro fff
+* /puaracontroller/0/accel fff
+* /puaracontroller/0/gyro fff
 
 ### The program also receives (port 9000)
 
-/puaracontroller/rumble iiff (controllerID, time, low_freq, hi_freq)
+*/puaracontroller/rumble iiff (controllerID, time, low_freq, hi_freq)
