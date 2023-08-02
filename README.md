@@ -1,8 +1,8 @@
-# Puara Joystick Converter
+# Puara Controller (Joystick converter/bridge)
 
-This program converts game controller data into OSC and MIDI and exposes it both locally (MIDI/OSC) and over the network (OSC).
+This program converts game controller data into OSC.
 
-- [Puara Joystick Converter](#puara-joystick-converter)
+- [Puara Controller (Joystick converter/bridge)](#puara-controller-joystick-converterbridge)
   - [To compile](#to-compile)
   - [To run](#to-run)
 
@@ -39,7 +39,7 @@ KERNEL=="hidraw*", KERNELS=="*054C:05C4*", MODE="0660", TAG+="uaccess"
 KERNEL=="hidraw*", KERNELS=="*054C:09CC*", MODE="0660", TAG+="uaccess"
 ```
 
-To compile puara-joystick, navigate to the cloned folder and execute:
+To compile puara-controller, navigate to the cloned folder and execute:
 
 ```bash
 mkdir build && cd build
