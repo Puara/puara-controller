@@ -21,7 +21,7 @@ Dependencies:
 For Debian-based systems:
 
 ```bash
-sudo apt install libsdl2-dev liblo-dev liblo-tools
+sudo apt install libsdl2-dev liblo-dev liblo-tools libjsoncpp-dev
 ```
 
 Note: The `steam-devices` package adds udev rules to allow accessing motion and force feedback on the controllers. You can add these rules manually in your `/usr/lib/udev/rules.d/`folder. 
@@ -63,12 +63,8 @@ Default port: 9001
 ### Messages sending value and duration of the last event:
 
 * /puaracontroller/0/A ii
-* /puaracontroller/0/A ii
-* /puaracontroller/0/B ii
 * /puaracontroller/0/B ii
 * /puaracontroller/0/X ii
-* /puaracontroller/0/X ii
-* /puaracontroller/0/Y ii
 * /puaracontroller/0/Y ii
 * /puaracontroller/0/leftshoulder ii
 * /puaracontroller/0/rightshoulder ii

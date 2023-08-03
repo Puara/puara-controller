@@ -14,6 +14,8 @@
 #include <csignal>
 #include <vector>
 #include <condition_variable>
+#include <jsoncpp/json/json.h>
+//#include <unistd.h>
 
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
@@ -34,6 +36,13 @@ PuaraController puaracontroller;
 lo::ServerThread osc_server(osc_server_port);
 lo::Address osc_sender(osc_client_address, osc_client_port);
 std::vector<std::thread> threads;
+
+void printHelp(const char* programName) {
+    std::cout << "Usage: " << programName << " [options] <json_file>" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "  -h, --help      Show help message" << std::endl;
+    std::cout << "  -c, --config    Provide a JSON config file" << std::endl;
+}
 
 void killlHandler(int signum) {
     std::cout << "\nClosing Puara Controller..." << std::endl;
@@ -134,7 +143,37 @@ void readSDL() {
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    bool useConfig = false;
+    std::string jsonFileName;
+
+    int option;
+    while ((option = getopt(argc, argv, "hc::")) != -1) {
+        switch (option) {
+            case 'h':
+                printHelp(argv[0]);
+                return 0;
+            case 'c':
+                useConfig = true;
+                jsonFileName = optarg;
+                break;
+            case '?':
+                if (optopt == 'c') {
+                    std::cerr << "Option -c requires a JSON config file." << std::endl;
+                } else {
+                    std::cerr << "Unknown option: " << static_cast<char>(optopt) << std::endl;
+                }
+                return 1;
+            default:
+                return 1;
+        }
+    }
+
+    if (!useConfig) {
+        printHelp(argv[0]);
+        //return 0;
+    }
 
     std::signal(SIGINT, killlHandler);
 
