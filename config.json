@@ -10,142 +10,142 @@
         "osc_client_address": "localhost",
         "osc_client_port": 9001
   },
-  "namespace": [
+  "mappings": [
     {
         "internal_address": "A",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "B",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "X",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "Y",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "leftshoulder",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "rightshoulder",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "dpad_up",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "dpad_down",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "dpad_left",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "dpad_right",
         "number_arguments": 2,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "triggerleft",
         "number_arguments": 2,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ 0, 32768 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "triggerright",
         "number_arguments": 2,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ 0, 32768 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "analogleft",
         "number_arguments": 3,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ -32768, 32768 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "analogright",
         "number_arguments": 3,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ -32768, 32768 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "accel",
         "number_arguments": 3,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ -50, 50 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "gyro",
         "number_arguments": 3,
-        "forward_address": ,
-        "range": [ 0, 1 ],
+        "forward_address": null,
+        "range": [ -10, 10 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     },
     {
         "internal_address": "touch",
         "number_arguments": 3,
-        "forward_address": ,
+        "forward_address": null,
         "range": [ 0, 1 ],
         "midi": [],
-        "midi_map": [],
+        "midi_map": []
     }
   ]
 }

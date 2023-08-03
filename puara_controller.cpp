@@ -1,7 +1,7 @@
 //****************************************************************************//
 // Puara Controller module - connect with game controllers using SDL2 (cpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
-// https://github.com/Puara/puara-joystick                                    //
+// https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
 // Edu Meneses (2023) - https://www.edumeneses.com                            //
@@ -68,13 +68,16 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
     }}
 };
 
-PuaraController::PuaraController() {
+int PuaraController::start() {
     std::cout << "Starting Puara Joystick..." << std::endl;
     if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) < 0) {
         std::cerr << "Could not initialize sdl2: " << SDL_GetError() << std::endl;
-        exit(EXIT_FAILURE);
-    } else {if (verbose) std::cout << "SDL2 initialized successfully" << std::endl;}
+        return 1;
+    } else {
+        if (verbose) std::cout << "SDL2 initialized successfully" << std::endl;
+    }
     std::cout << "Puara Joystick started successfully" << std::endl;
+    return 0;
 };
 
 int PuaraController::rumble(int controllerID, int time=1000, float lowFreq=1.0, float hiFreq=1.0f) {

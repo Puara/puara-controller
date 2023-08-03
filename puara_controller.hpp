@@ -1,7 +1,7 @@
 //****************************************************************************//
 // Puara Controller module - connect with game controllers using SDL2 (hpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
-// https://github.com/Puara/puara-joystick                                    //
+// https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
 // Edu Meneses (2023) - https://www.edumeneses.com                            //
@@ -20,7 +20,7 @@
 
 class PuaraController {
     public:
-        PuaraController();
+        int start();
         int openController(int joy_index);
         int openAllControllers();
         struct EventResume {int controller; unsigned int eventType; int eventAction;};

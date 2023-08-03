@@ -1,7 +1,7 @@
 //****************************************************************************//
 // Puara Controller standalone - connect with game controllers using SDL2     //
 //                             Controller -> OSC/MIDI bridge                  //
-// https://github.com/Puara/puara-joystick                                    //
+// https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
 // Edu Meneses (2023) - https://www.edumeneses.com                            //
@@ -15,7 +15,8 @@
 #include <vector>
 #include <condition_variable>
 #include <jsoncpp/json/json.h>
-//#include <unistd.h>
+#include <fstream>
+#include <unordered_map>
 
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
@@ -27,7 +28,7 @@ bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disableMotion = true;
+bool disableMotion = false;
 
 std::atomic<bool> keepRunning(true);
 std::condition_variable cv;
@@ -37,11 +38,64 @@ lo::ServerThread osc_server(osc_server_port);
 lo::Address osc_sender(osc_client_address, osc_client_port);
 std::vector<std::thread> threads;
 
+struct Mapping {
+    std::string internal_address;
+    int number_arguments;
+    std::string forward_address;
+    float range[2];
+    int midi[2];
+    int midi_map[3];
+};
+std::unordered_map<std::string, Mapping> puaraMappings;
+
 void printHelp(const char* programName) {
-    std::cout << "Usage: " << programName << " [options] <json_file>" << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << "  -h, --help      Show help message" << std::endl;
-    std::cout << "  -c, --config    Provide a JSON config file" << std::endl;
+    std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
+              << "                             Controller -> OSC/MIDI bridge                  \n"
+              << " https://github.com/Puara/puara-controller                                  \n"
+              << " Metalab - Société des Arts Technologiques (SAT)                            \n"
+              << " Input Devices and Music Interaction Laboratory (IDMIL), McGill University  \n"
+              << " Edu Meneses (2023)                                                         \n"
+              << "\nUsage: " << programName << " [options] <json_file>\n"
+              << "Options:\n"
+              << "  -h, --help      Show help message\n"
+              << "  -c, --config    Provide a JSON config file"
+              << std::endl;
+}
+
+int readJson(std::string jsonFileName) {
+    std::ifstream jsonFile(jsonFileName);
+    if (!jsonFile.is_open()) {
+        std::cerr << "Failed to open JSON file: " << jsonFileName << std::endl;
+        return 1;
+    }
+    Json::Value root;
+    jsonFile >> root;
+    // Reading config
+    polling_interval = root["config"]["polling_interval"].asInt();
+    disableMotion = root["config"]["disableMotion"].asBool();
+    verbose = root["config"]["verbose"].asBool();
+    print_events = root["config"]["print_events"].asBool();
+    print_motion_data = root["config"]["print_motion_data"].asBool();
+    puaracontroller.identifier = root["config"]["osc_namespace"].asString();
+    osc_server_port = root["config"]["osc_server_port"].asInt();
+    osc_client_address = root["config"]["osc_client_address"].asString();
+    osc_client_port = root["config"]["osc_client_port"].asInt();
+    // Reading mappings
+    Json::Value mappings = root["mappings"];
+    for (const Json::Value& mapInfo : mappings) {
+        puaraMappings.emplace(
+            mapInfo["internal_address"].asString(), 
+            Mapping{
+                .internal_address = mapInfo["internal_address"].asString(),
+                .number_arguments = mapInfo["number_arguments"].asInt(),
+                .forward_address = mapInfo["forward_address"].asString(),
+                .range = {0,0},
+                .midi = {0,0},
+                .midi_map = {0,0,0},
+            }
+        );
+    }
+    return 0;
 }
 
 void killlHandler(int signum) {
@@ -170,12 +224,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (!useConfig) {
-        printHelp(argv[0]);
-        //return 0;
+    if ( puaracontroller.start() ) {
+        exit(EXIT_FAILURE);
     }
 
     std::signal(SIGINT, killlHandler);
+
+    if (useConfig) readJson(jsonFileName);
 
     libloServerMethods();
 
