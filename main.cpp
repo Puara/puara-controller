@@ -25,7 +25,7 @@ bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disableMotion = true;
+bool disableMotion = false;
 
 std::atomic<bool> keepRunning(true);
 std::condition_variable cv;
