@@ -17,6 +17,7 @@
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include <unordered_map>
+#include <iterator>
 
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
@@ -40,13 +41,19 @@ std::vector<std::thread> threads;
 
 struct Mapping {
     std::string internal_address;
-    int number_arguments;
     std::string forward_address;
-    float range[2];
-    int midi[2];
-    int midi_map[3];
+    std::vector<std::string> forward_arguments;
+    float min_range, max_range;
 };
 std::unordered_map<std::string, Mapping> puaraMappings;
+
+struct Midi {
+    std::string type;
+    int channel;
+    std::string note_value;
+    std::string velocity_controller;
+};
+std::vector<Midi> puaraMidi;
 
 void printHelp(const char* programName) {
     std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
@@ -69,6 +76,7 @@ int readJson(std::string jsonFileName) {
         return 1;
     }
     Json::Value root;
+    //Json::Value mappings = root["mappings"];
     jsonFile >> root;
     // Reading config
     polling_interval = root["config"]["polling_interval"].asInt();
@@ -81,17 +89,30 @@ int readJson(std::string jsonFileName) {
     osc_client_address = root["config"]["osc_client_address"].asString();
     osc_client_port = root["config"]["osc_client_port"].asInt();
     // Reading mappings
-    Json::Value mappings = root["mappings"];
-    for (const Json::Value& mapInfo : mappings) {
+    for (const Json::Value& mapInfo : root["mappings"]) {
         puaraMappings.emplace(
             mapInfo["internal_address"].asString(), 
             Mapping{
                 .internal_address = mapInfo["internal_address"].asString(),
-                .number_arguments = mapInfo["number_arguments"].asInt(),
                 .forward_address = mapInfo["forward_address"].asString(),
-                .range = {0,0},
-                .midi = {0,0},
-                .midi_map = {0,0,0},
+                .min_range = mapInfo["min_range"].asFloat(),
+                .max_range = mapInfo["max_range"].asFloat()
+            }
+        );
+        if (mapInfo["forward_arguments"].isArray()) {
+            for (const Json::Value& element : mapInfo["forward_arguments"]) {
+                puaraMappings[mapInfo["internal_address"].asString()].forward_arguments.push_back(element.asString());
+            }
+        }
+    }
+    // Reading MIDI
+    for (const Json::Value& midiInfo : root["midi"]) {
+        puaraMidi.emplace_back(
+            Midi{
+                .type = midiInfo["type"].asString() ,
+                .channel = midiInfo["channel"].asInt(),
+                .note_value = midiInfo["note_value"].asString() ,
+                .velocity_controller = midiInfo["velocity_controller"].asString() 
             }
         );
     }
