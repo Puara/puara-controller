@@ -1,0 +1,14 @@
+#N canvas 0 0 873 755 12;
+#X obj 360 428 netreceive -u -b;
+#X msg 360 373 listen 5000;
+#X msg 372 401 listen 0;
+#X text 439 400 stop listening;
+#X text 357 349 packets from network;
+#X text 445 373 listen on port 5000;
+#X text 482 422 UDP packets \, binary output, f 13;
+#X obj 360 489 oscparse;
+#X obj 360 512 print parse-output;
+#X connect 0 0 7 0;
+#X connect 1 0 0 0;
+#X connect 2 0 0 0;
+#X connect 7 0 8 0;

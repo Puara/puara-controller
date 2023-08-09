@@ -13,10 +13,11 @@ This program converts game controller data into OSC.
 
 ## To compile
 
-Dependencies:
+Dependencies (as gitsubmodules):
 
-- [libsdl2-dev](https://github.com/libsdl-org/SDL/releases)
-- [liblo](https://github.com/radarsat1/liblo)
+- [SDL](https://github.com/libsdl-org/SDL.git)
+- [liblo](https://github.com/radarsat1/liblo.git)
+- [jsoncpp](https://github.com/open-source-parsers/jsoncpp.git)
 
 For Debian-based systems:
 

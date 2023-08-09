@@ -11,8 +11,7 @@
 #ifndef PUARA_CONTROLLER_H
 #define PUARA_CONTROLLER_H
 
-
-#include <SDL2/SDL.h>
+#include "SDL2/SDL.h"
 #include <iostream>
 #include <vector>
 #include <unordered_map>

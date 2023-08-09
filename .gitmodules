@@ -1,0 +1,10 @@
+[submodule "include/jsoncpp"]
+	path = jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git
+[submodule "include/SDL"]
+	path = SDL
+	url = https://github.com/libsdl-org/SDL.git
+	branch = SDL2
+[submodule "include/liblo"]
+	path = liblo
+	url = https://github.com/radarsat1/liblo.git
