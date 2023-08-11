@@ -16,7 +16,7 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
         {SDL_CONTROLLERBUTTONDOWN,"button"},
         {SDL_CONTROLLERBUTTONUP,"button"},
         {SDL_CONTROLLERAXISMOTION,"axis"},
-        {SDL_CONTROLLERSENSORUPDATE,"sensor"},
+        {SDL_CONTROLLERSENSORUPDATE,"motion"},
         {SDL_CONTROLLERTOUCHPADDOWN,"touch"},
         {SDL_CONTROLLERTOUCHPADMOTION,"touch"},
         {SDL_CONTROLLERTOUCHPADUP,"touch"},
@@ -57,7 +57,7 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
         {SDL_CONTROLLER_AXIS_TRIGGERRIGHT,"triggerright"},
         {SDL_CONTROLLER_AXIS_MAX,"max_axis"}
     }},
-    {"sensor",{ /* This list is generated from SDL_SensorType */
+    {"motion",{ /* This list is generated from SDL_SensorType */
         {SDL_SENSOR_INVALID,"invalid"},
         {SDL_SENSOR_UNKNOWN,"unknown"},
         {SDL_SENSOR_ACCEL,"accel"},
@@ -69,14 +69,14 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
 };
 
 int PuaraController::start() {
-    std::cout << "Starting Puara Joystick..." << std::endl;
+    std::cout << "Starting Puara Controller..." << std::endl;
     if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) < 0) {
         std::cerr << "Could not initialize sdl2: " << SDL_GetError() << std::endl;
         return 1;
     } else {
         if (verbose) std::cout << "SDL2 initialized successfully" << std::endl;
     }
-    std::cout << "Puara Joystick started successfully" << std::endl;
+    std::cout << "Puara Controller started successfully" << std::endl;
     return 0;
 };
 
@@ -232,10 +232,10 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
             controllers[event.cdevice.which].state.touch.action = event.type;
             controllers[event.cdevice.which].state.touch.touchId = event.tfinger.touchId;
             controllers[event.cdevice.which].state.touch.fingerId = event.tfinger.fingerId;
-            controllers[event.cdevice.which].state.touch.X = event.tfinger.x;
-            controllers[event.cdevice.which].state.touch.Y = event.tfinger.y;
-            controllers[event.cdevice.which].state.touch.dX = event.tfinger.dx;
-            controllers[event.cdevice.which].state.touch.dY = event.tfinger.dy;
+            controllers[event.cdevice.which].state.touch.X = event.tfinger.y;
+            controllers[event.cdevice.which].state.touch.Y = event.tfinger.x;
+            controllers[event.cdevice.which].state.touch.dX = event.tfinger.dy;
+            controllers[event.cdevice.which].state.touch.dY = event.tfinger.dx;
             controllers[event.cdevice.which].state.touch.pressure = event.tfinger.pressure;
             break;
         // case SDL_MULTIGESTURE:

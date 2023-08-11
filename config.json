@@ -112,6 +112,12 @@
             "forward_address": null,
             "forward_arguments": ["touchId", "fingerId", "X", "Y"],
             "range": {"min": 0, "max": 1}
+        },
+        {
+            "internal_address": "touchpadbutton",
+            "forward_address": null,
+            "forward_arguments": ["value", "timestamp"],
+            "range": {"min": 0, "max": 1}
         }
     ],
     "midi": [

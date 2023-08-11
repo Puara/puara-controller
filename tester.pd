@@ -1,14 +1,248 @@
-#N canvas 0 0 873 755 12;
-#X obj 360 428 netreceive -u -b;
-#X msg 360 373 listen 5000;
-#X msg 372 401 listen 0;
-#X text 439 400 stop listening;
-#X text 357 349 packets from network;
-#X text 445 373 listen on port 5000;
-#X text 482 422 UDP packets \, binary output, f 13;
-#X obj 360 489 oscparse;
-#X obj 360 512 print parse-output;
-#X connect 0 0 7 0;
+#N canvas 2082 619 815 442 12;
+#X obj 39 129 netreceive -u -b;
+#X msg 39 91 listen 0;
+#X obj 39 158 oscparse;
+#X msg 209 69 listen 9001;
+#X obj 39 186 route list;
+#X obj 39 212 route puaracontroller;
+#X obj 39 237 route id;
+#X obj 210 217 makefilename %d;
+#X obj 105 31 loadbang;
+#N canvas 4211 849 801 301 route_controller 0;
+#X obj 20 132 route accel gyro;
+#X obj 13 48 route A B X Y leftshoulder rightshoulder dpad_left dpad_right
+dpad_up dpad_down guide back start, f 97;
+#X obj 222 133 route triggerleft triggerright analogleft analogright
+touch touchpadbutton, f 74;
+#X obj 13 77 s A;
+#X obj 65 77 s B;
+#X obj 117 77 s X;
+#X obj 169 77 s Y;
+#X obj 221 77 s LS;
+#X obj 273 77 s RS;
+#X obj 637 77 s S;
+#X obj 20 181 unpack f f f;
+#X obj 129 181 unpack f f f;
+#X obj 20 206 s AX;
+#X obj 55 206 s AY;
+#X obj 90 206 s AZ;
+#X obj 129 206 s GX;
+#X obj 164 206 s GY;
+#X obj 199 206 s GZ;
+#X obj 222 158 s TL;
+#X obj 307 161 s TR;
+#X obj 391 160 unpack f f;
+#X obj 391 185 s ALX;
+#X obj 435 185 s ALY;
+#X obj 356 159 s AL;
+#X obj 503 161 unpack f f;
+#X obj 468 160 s AR;
+#X obj 503 186 s ARX;
+#X obj 547 186 s ARY;
+#X obj 586 159 s T;
+#X obj 667 186 s TX;
+#X obj 705 184 s TY;
+#X obj 731 159 s TB;
+#X obj 13 18 inlet;
+#X obj 325 77 s L;
+#X obj 377 77 s R;
+#X obj 429 77 s U;
+#X obj 481 77 s D;
+#X obj 533 77 s G;
+#X obj 585 77 s C;
+#X obj 616 160 unpack f f f f;
+#X connect 0 0 10 0;
+#X connect 0 1 11 0;
+#X connect 0 2 2 0;
+#X connect 1 0 3 0;
+#X connect 1 1 4 0;
+#X connect 1 2 5 0;
+#X connect 1 3 6 0;
+#X connect 1 4 7 0;
+#X connect 1 5 8 0;
+#X connect 1 6 33 0;
+#X connect 1 7 34 0;
+#X connect 1 8 35 0;
+#X connect 1 9 36 0;
+#X connect 1 10 37 0;
+#X connect 1 11 38 0;
+#X connect 1 12 9 0;
+#X connect 1 13 0 0;
+#X connect 2 0 18 0;
+#X connect 2 1 19 0;
+#X connect 2 2 23 0;
+#X connect 2 2 20 0;
+#X connect 2 3 25 0;
+#X connect 2 3 24 0;
+#X connect 2 4 28 0;
+#X connect 2 4 39 0;
+#X connect 2 5 31 0;
+#X connect 10 0 12 0;
+#X connect 10 1 13 0;
+#X connect 10 2 14 0;
+#X connect 11 0 15 0;
+#X connect 11 1 16 0;
+#X connect 11 2 17 0;
+#X connect 20 0 21 0;
+#X connect 20 1 22 0;
+#X connect 24 0 26 0;
+#X connect 24 1 27 0;
+#X connect 32 0 1 0;
+#X connect 39 2 29 0;
+#X connect 39 3 30 0;
+#X restore 39 264 pd route_controller;
+#X obj 475 164 tgl 25 0 Ls L l 8 12 0 15 #fcfcfc #000000 #000000 0
+1;
+#X obj 491 194 tgl 25 0 Ds D dn 4 12 0 15 #fcfcfc #000000 #000000 0
+1;
+#X obj 492 134 tgl 25 0 Us U up 4 12 0 15 #fcfcfc #000000 #000000 0
+1;
+#X obj 677 152 tgl 25 0 Xs X X 4 12 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 688 183 tgl 25 0 As A A 4 15 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 717 170 tgl 25 0 Bs B B 4 12 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 707 138 tgl 25 0 Ys Y Y 4 12 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 527 120 tgl 15 0 Cs C bk 2 7 0 10 #fcfcfc #000000 #000000 0
+1;
+#X obj 674 120 tgl 15 0 Ss S St 2 7 0 10 #fcfcfc #000000 #000000 0
+1;
+#N canvas 1462 305 850 539 xy 0;
+#X obj 51 51 cnv 15 48 48 \$0-xy_fundo_send \$0-xy_fundo_r empty 20
+12 0 14 #e0e0e0 #404040 0;
+#X obj 69 70 cnv 10 10 10 \$0-xy_L_send \$0-xy_L empty 6 10 0 14 #905420
+#fcfcfc 0;
+#X obj 262 256 list prepend \$0;
+#X obj 234 98 expr ($f1 + 32768) * 40 / 65535 + 50;
+#X obj 494 98 expr ($f1 + 32768) * 40 / 65535 + 50;
+#X obj 234 63 r ALX;
+#X obj 494 62 r ALY;
+#X obj 234 177 list append 0;
+#X obj 494 177 list prepend 0;
+#X obj 494 124 clip 50 90;
+#X obj 234 123 clip 50 90;
+#X msg 262 287 \; \$1-xy_L pos \$2 \$3;
+#X connect 2 0 11 0;
+#X connect 3 0 10 0;
+#X connect 4 0 9 0;
+#X connect 5 0 3 0;
+#X connect 6 0 4 0;
+#X connect 7 0 2 0;
+#X connect 8 0 2 0;
+#X connect 9 0 8 0;
+#X connect 9 0 7 1;
+#X connect 10 0 7 0;
+#X connect 10 0 8 1;
+#X coords 0 -1 1 1 50 50 2 50 50;
+#X restore 523 209 pd xy;
+#N canvas 1462 305 850 316 xy 0;
+#X obj 51 51 cnv 15 48 48 \$0-xy_fundo_send \$0-xy_fundo_r empty 20
+12 0 14 #e0e0e0 #404040 0;
+#X obj 70 70 cnv 10 10 10 \$0-xy_R_send \$0-xy_R empty 6 10 0 14 #905420
+#fcfcfc 0;
+#X obj 262 256 list prepend \$0;
+#X obj 234 98 expr ($f1 + 32768) * 40 / 65535 + 50;
+#X obj 494 98 expr ($f1 + 32768) * 40 / 65535 + 50;
+#X obj 234 177 list append 0;
+#X obj 494 177 list prepend 0;
+#X obj 494 124 clip 50 90;
+#X obj 234 123 clip 50 90;
+#X obj 234 63 r ARX;
+#X obj 494 62 r ARY;
+#X msg 262 287 \; \$1-xy_R pos \$2 \$3;
+#X connect 2 0 11 0;
+#X connect 3 0 8 0;
+#X connect 4 0 7 0;
+#X connect 5 0 2 0;
+#X connect 6 0 2 0;
+#X connect 7 0 6 0;
+#X connect 7 0 5 1;
+#X connect 8 0 5 0;
+#X connect 8 0 6 1;
+#X connect 9 0 3 0;
+#X connect 10 0 4 0;
+#X coords 0 -1 1 1 50 50 2 50 50;
+#X restore 629 209 pd xy;
+#X obj 588 234 tgl 25 0 Gs G gd 4 12 0 15 #fcfcfc #000000 #000000 0
+1;
+#N canvas 2586 690 881 382 xy 0;
+#X obj 51 51 cnv 15 98 48 \$0-xy_fundo_send \$0-xy_fundo_r empty 20
+12 0 14 #e0e0e0 #404040 0;
+#X obj 120 50 cnv 10 10 10 \$0-xy_T_send \$0-xy_T empty 6 10 0 14 #905420
+#fcfcfc 0;
+#X obj 262 256 list prepend \$0;
+#X obj 234 177 list append 0;
+#X obj 494 177 list prepend 0;
+#X obj 494 124 clip 50 90;
+#X obj 234 63 r TX;
+#X obj 494 62 r TY;
+#X msg 262 287 \; \$1-xy_T pos \$2 \$3;
+#X obj 234 98 expr ($f1 * 90) + 50;
+#X obj 234 123 clip 50 140;
+#X obj 494 98 expr ($f1 * 40) + 50;
+#X connect 2 0 8 0;
+#X connect 3 0 2 0;
+#X connect 4 0 2 0;
+#X connect 5 0 4 0;
+#X connect 5 0 3 1;
+#X connect 6 0 9 0;
+#X connect 7 0 11 0;
+#X connect 9 0 10 0;
+#X connect 10 0 3 0;
+#X connect 11 0 5 0;
+#X coords 0 -1 1 1 100 50 2 50 50;
+#X restore 553 133 pd xy;
+#X obj 521 288 vsl 25 64 -40 40 0 0 empty AX aclX 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 563 288 vsl 25 64 -40 40 0 0 empty AY aclY 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 603 288 vsl 25 64 -40 40 0 0 empty AZ aclZ 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 643 288 vsl 25 64 -40 40 0 0 empty GX gyrX 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 683 288 vsl 25 64 -40 40 0 0 empty GY gyrY 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 723 288 vsl 25 64 -40 40 0 0 empty GZ gyrZ 0 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 462 70 vsl 20 64 0 32768 0 0 TLs TL Trig_L -6 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 708 66 vsl 20 64 0 32768 0 0 TRs TR Trig_R -6 -9 0 10 #fcfcfc
+#000000 #000000 0 1;
+#X obj 492 90 tgl 25 0 LSr LS L 4 12 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 678 90 tgl 25 0 RSr RS R 4 12 0 25 #fcfcfc #000000 #000000 0
+1;
+#X obj 509 164 tgl 25 0 Rs R r 8 12 0 15 #fcfcfc #000000 #000000 0
+1;
+#X text 296 69 OSC port;
+#X text 242 93 controller ID;
+#X msg 210 94 1;
+#X text 14 398 Edu Meneses (2023);
+#X text 14 362 Puara Controller - tester;
+#X text 14 380 https://github.com/Puara/puara-controller;
+#X text 15 416 Released under MIT license;
+#X floatatom 518 360 5 0 0 0 - - - 0;
+#X floatatom 559 360 5 0 0 0 - - - 0;
+#X floatatom 599 360 5 0 0 0 - - - 0;
+#X floatatom 639 360 5 0 0 0 - - - 0;
+#X floatatom 679 360 5 0 0 0 - - - 0;
+#X floatatom 719 360 5 0 0 0 - - - 0;
+#X connect 0 0 2 0;
 #X connect 1 0 0 0;
-#X connect 2 0 0 0;
-#X connect 7 0 8 0;
+#X connect 2 0 4 0;
+#X connect 3 0 0 0;
+#X connect 4 0 5 0;
+#X connect 5 0 6 0;
+#X connect 6 0 9 0;
+#X connect 7 0 6 1;
+#X connect 8 0 36 0;
+#X connect 8 0 3 0;
+#X connect 23 0 41 0;
+#X connect 24 0 42 0;
+#X connect 25 0 43 0;
+#X connect 26 0 44 0;
+#X connect 27 0 45 0;
+#X connect 28 0 46 0;
+#X connect 36 0 7 0;
