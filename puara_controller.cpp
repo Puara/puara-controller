@@ -177,6 +177,7 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
             controllers[event.cdevice.which].state.button[event.cbutton.button].value = event.cbutton.state;
             answer.eventAction = event.cbutton.button;
+            answer.eventName = SDL2Name["button"][event.cbutton.button];
             controllers[event.cdevice.which].state.button[event.cbutton.button].event_duration = event.cbutton.timestamp - controllers[event.cdevice.which].state.button[event.cbutton.button].event_timestamp;
             controllers[event.cdevice.which].state.button[event.cbutton.button].event_timestamp = event.cbutton.timestamp;
             break;
@@ -226,9 +227,11 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
                     break;
             }
             answer.eventAction = event.caxis.axis;
+            answer.eventName = SDL2Name["axis"][event.caxis.axis];
             break;
         case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
             answer.eventAction = 0;
+            answer.eventName = SDL2Name["touch"][answer.eventAction];
             controllers[event.cdevice.which].state.touch.action = event.type;
             controllers[event.cdevice.which].state.touch.touchId = event.tfinger.touchId;
             controllers[event.cdevice.which].state.touch.fingerId = event.tfinger.fingerId;
@@ -258,6 +261,7 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
                 controllers[event.cdevice.which].state.gyro.Z = event.csensor.data[2];
             };
             answer.eventAction = event.csensor.sensor;
+            answer.eventName = SDL2Name["motion"][event.csensor.sensor];
             break;
         default:
             answer.eventAction = -1;

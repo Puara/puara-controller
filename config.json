@@ -1,123 +1,38 @@
 {
     "config": {
         "polling_interval": 2,
-        "disableMotion": true,
+        "disable_motion": true,
         "verbose": false,
         "print_events": false,
         "print_motion_data": false,
         "osc_namespace": "puaracontroller",
         "osc_server_port": 9000,
         "osc_client_address": "localhost",
-        "osc_client_port": 9001
+        "osc_client_port": 9001,
+        "forward_address": "",
+        "forward_port": 9000
     },
-    "mappings": [
+    "forwarders": [
         {
             "internal_address": "A",
-            "forward_address": null,
+            "controller_id": 0,
+            "forward_namespace": "/button",
             "forward_arguments": ["value", "timestamp"],
             "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "B",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "X",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "Y",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "leftshoulder",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "rightshoulder",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "dpad_up",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "dpad_down",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "dpad_left",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "dpad_right",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "triggerleft",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": -32768, "max": 32768}
         },
         {
             "internal_address": "triggerright",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": -32768, "max": 32768}
-        },
-        {
-            "internal_address": "analogleft",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": -32768, "max": 32768}
-        },
-        {
-            "internal_address": "analogright",
-            "forward_address": null,
-            "forward_arguments": ["X", "Y", "timestamp"],
-            "range": {"min": -32768, "max": 32768}
+            "controller_id": 1,
+            "forward_namespace": "/control/volume",
+            "forward_arguments": ["value"],
+            "range": {"min": 0, "max": 127}
         },
         {
             "internal_address": "accel",
-            "forward_address": null,
-            "forward_arguments": ["X", "Y", "Z", "timestamp"],
-            "range": {"min": -50, "max": 50}
-        },
-        {
-            "internal_address": "gyro",
-            "forward_address": null,
-            "forward_arguments": ["X", "Y", "Z", "timestamp"],
-            "range": {"min": -50, "max": 50}
-        },
-        {
-            "internal_address": "touch",
-            "forward_address": null,
-            "forward_arguments": ["touchId", "fingerId", "X", "Y"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "touchpadbutton",
-            "forward_address": null,
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
+            "controller_id": 0,
+            "forward_namespace": "/motion",
+            "forward_arguments": ["X", "Z"],
+            "range": {"min": -90, "max": 90}
         }
     ],
     "midi": [

@@ -22,7 +22,7 @@ class PuaraController {
         int start();
         int openController(int joy_index);
         int openAllControllers();
-        struct EventResume {int controller; unsigned int eventType; int eventAction;};
+        struct EventResume {int controller; unsigned int eventType; int eventAction; std::string eventName;};
         EventResume pullSDLEvent(SDL_Event event);
         int rumble(int controllerID, int time, float low_freq, float hi_freq);
         void printEvent(EventResume eventResume);

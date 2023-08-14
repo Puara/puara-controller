@@ -29,9 +29,11 @@ bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disableMotion = false;
+bool disable_motion = false;
+std::string forward_address;
+int forward_port;
 
-std::atomic<bool> keepRunning(true);
+std::atomic<bool> keep_running(true);
 std::condition_variable cv;
 std::mutex mtx;
 PuaraController puaracontroller;
@@ -41,11 +43,13 @@ std::vector<std::thread> threads;
 
 struct Mapping {
     std::string internal_address;
-    std::string forward_address;
+    int controller_id;
+    std::string forward_namespace;
+    std::string forward_port;
     std::vector<std::string> forward_arguments;
     float min_range, max_range;
 };
-std::unordered_map<std::string, Mapping> puaraMappings;
+std::unordered_map<std::string, Mapping> custom_mappings;
 
 struct Midi {
     std::string type;
@@ -53,7 +57,7 @@ struct Midi {
     std::string note_value;
     std::string velocity_controller;
 };
-std::vector<Midi> puaraMidi;
+std::vector<Midi> puara_midi;
 
 void printHelp(const char* programName) {
     std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
@@ -80,7 +84,7 @@ int readJson(std::string jsonFileName) {
     jsonFile >> root;
     // Reading config
     polling_interval = root["config"]["polling_interval"].asInt();
-    disableMotion = root["config"]["disableMotion"].asBool();
+    disable_motion = root["config"]["disable_motion"].asBool();
     verbose = root["config"]["verbose"].asBool();
     print_events = root["config"]["print_events"].asBool();
     print_motion_data = root["config"]["print_motion_data"].asBool();
@@ -88,26 +92,29 @@ int readJson(std::string jsonFileName) {
     osc_server_port = root["config"]["osc_server_port"].asInt();
     osc_client_address = root["config"]["osc_client_address"].asString();
     osc_client_port = root["config"]["osc_client_port"].asInt();
+    forward_address = root["config"]["forward_address"].asString();
+    forward_port = root["config"]["forward_port"].asInt();
     // Reading mappings
-    for (const Json::Value& mapInfo : root["mappings"]) {
-        puaraMappings.emplace(
+    for (const Json::Value& mapInfo : root["forwarders"]) {
+        custom_mappings.emplace(
             mapInfo["internal_address"].asString(), 
             Mapping{
                 .internal_address = mapInfo["internal_address"].asString(),
-                .forward_address = mapInfo["forward_address"].asString(),
+                .controller_id = mapInfo["internal_address"].asInt(),
+                .forward_namespace = mapInfo["forward_address"].asString(),
                 .min_range = mapInfo["min_range"].asFloat(),
                 .max_range = mapInfo["max_range"].asFloat()
             }
         );
         if (mapInfo["forward_arguments"].isArray()) {
             for (const Json::Value& element : mapInfo["forward_arguments"]) {
-                puaraMappings[mapInfo["internal_address"].asString()].forward_arguments.push_back(element.asString());
+                custom_mappings[mapInfo["internal_address"].asString()].forward_arguments.push_back(element.asString());
             }
         }
     }
     // Reading MIDI
     for (const Json::Value& midiInfo : root["midi"]) {
-        puaraMidi.emplace_back(
+        puara_midi.emplace_back(
             Midi{
                 .type = midiInfo["type"].asString() ,
                 .channel = midiInfo["channel"].asInt(),
@@ -122,7 +129,7 @@ int readJson(std::string jsonFileName) {
 void killlHandler(int signum) {
     std::cout << "\nClosing Puara Controller..." << std::endl;
     SDL_Quit();
-    keepRunning.store(false);
+    keep_running.store(false);
     cv.notify_all();
 }
 
@@ -145,18 +152,11 @@ int libloServerMethods(){
         return 0;
 }
 
-int sendOSC(PuaraController::EventResume puaraEvent, bool useForwardAddress=false) {
+int sendOSC(PuaraController::EventResume puaraEvent) {
     if (puaraEvent.eventAction == -1)
         return 1;
     
-    std::string action = puaracontroller.SDL2Name[puaracontroller.SDL2Name["events"][puaraEvent.eventType]][puaraEvent.eventAction];
-    std::string full_namespace;
-
-    if (useForwardAddress) {
-        full_namespace = puaraMappings[action].forward_address;
-    } else {
-        full_namespace = "/" + puaracontroller.identifier + "/" + std::to_string(puaraEvent.controller) + "/" + action;
-    }
+    std::string puara_namespace = "/" + puaracontroller.identifier + "/" + std::to_string(puaraEvent.controller) + "/" + puaraEvent.eventName;
 
     lo::Message msg;
     switch (puaraEvent.eventType) {
@@ -204,7 +204,98 @@ int sendOSC(PuaraController::EventResume puaraEvent, bool useForwardAddress=fals
                 }
             break;
     }
-    osc_sender.send(full_namespace, msg);
+    osc_sender.send(puara_namespace, msg);
+
+    return 0;
+}
+
+int sendCustomOSC(PuaraController::EventResume puaraEvent) {
+    if (puaraEvent.eventAction == -1)
+        return 1;
+
+    lo::Message msg;
+    switch (puaraEvent.eventType) {
+        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+            for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                if (argument == "value") { 
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
+                } else if (argument == "timestamp") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
+                } 
+            }
+            break;
+        case SDL_CONTROLLERAXISMOTION:
+            switch (puaraEvent.eventAction) {
+                case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
+                    for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                        if (argument == "X") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.X);
+                        } else if (argument == "Y") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
+                        } else if (argument == "timestamp") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
+                        }
+                    }
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
+                    for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                        if (argument == "X") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.X);
+                        } else if (argument == "Y") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.Y);
+                        } else if (argument == "timestamp") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
+                        }
+                    }
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.value);
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
+                    break;
+                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.value);
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
+                    break;
+            }
+            break;
+        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+            for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                if (argument == "touchId") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchId);
+                } else if (argument == "fingerId") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.fingerId);
+                } else if (argument == "X") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.X);
+                } else if (argument == "Y") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
+                }
+            }
+            break;
+        case SDL_CONTROLLERSENSORUPDATE:
+            if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
+                for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                    if (argument == "X") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.X);
+                    } else if (argument == "Y") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Y);
+                    } else if (argument == "Z") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Z);
+                    }
+                }
+            } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
+                for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                    if (argument == "X") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.X);
+                    } else if (argument == "Y") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Y);
+                    } else if (argument == "Z") {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Z);
+                    }
+                }
+            }
+            break;
+    }
+    osc_sender.send(custom_mappings[puaraEvent.eventName].forward_namespace, msg);
 
     return 0;
 }
@@ -212,13 +303,17 @@ int sendOSC(PuaraController::EventResume puaraEvent, bool useForwardAddress=fals
 void readSDL() {
     SDL_Event sdlEvent;
     PuaraController::EventResume puaraEvent;
-    while (keepRunning) {
+    while (keep_running) {
         if (SDL_PollEvent( &sdlEvent ) != 0) {
-            if (print_events)
+            if (print_events) {
                 puaracontroller.printEvent(puaracontroller.pullSDLEvent(sdlEvent), print_motion_data);
-            else
+            } else {
                 puaraEvent = puaracontroller.pullSDLEvent(sdlEvent);
                 sendOSC(puaraEvent);
+                if (custom_mappings.find(puaraEvent.eventName) != custom_mappings.end()) {
+                    sendCustomOSC(puaraEvent);
+                }
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(polling_interval));
     }
@@ -269,13 +364,13 @@ int main(int argc, char* argv[]) {
     }
 
     puaracontroller.verbose = verbose;
-    puaracontroller.enableMotion = !disableMotion;
+    puaracontroller.enableMotion = !disable_motion;
 
     threads.emplace_back(readSDL);
 
     {
         std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, []{ return !keepRunning; });
+        cv.wait(lock, []{ return !keep_running; });
     }
 
     for (auto& thread : threads) {
