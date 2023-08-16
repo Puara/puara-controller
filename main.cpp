@@ -68,8 +68,8 @@ void printHelp(const char* programName) {
               << " Edu Meneses (2023)                                                         \n"
               << "\nUsage: " << programName << " [options] <json_file>\n"
               << "Options:\n"
-              << "  -h, --help      Show help message\n"
-              << "  -c, --config    Provide a JSON config file"
+              << "  -h,       Show help message\n"
+              << "  -c,       Provide a JSON config file"
               << std::endl;
 }
 
@@ -100,12 +100,22 @@ int readJson(std::string jsonFileName) {
             mapInfo["internal_address"].asString(), 
             Mapping{
                 .internal_address = mapInfo["internal_address"].asString(),
-                .controller_id = mapInfo["internal_address"].asInt(),
-                .forward_namespace = mapInfo["forward_address"].asString(),
-                .min_range = mapInfo["min_range"].asFloat(),
-                .max_range = mapInfo["max_range"].asFloat()
+                .controller_id = mapInfo["controller_id"].asInt(),
+                .forward_namespace = mapInfo["forward_namespace"].asString()
             }
         );
+        if (!mapInfo["range"]["min"].isNull()) {
+            custom_mappings[mapInfo["internal_address"].asString()].min_range = mapInfo["range"]["min"].asFloat();
+        } else {
+            custom_mappings[mapInfo["internal_address"].asString()].min_range = 0;
+        }
+        if (!mapInfo["range"]["max"].isNull()) {
+            custom_mappings[mapInfo["internal_address"].asString()].max_range = mapInfo["range"]["max"].asFloat();
+        } else {
+            custom_mappings[mapInfo["internal_address"].asString()].max_range = 0;
+        }
+        
+        
         if (mapInfo["forward_arguments"].isArray()) {
             for (const Json::Value& element : mapInfo["forward_arguments"]) {
                 custom_mappings[mapInfo["internal_address"].asString()].forward_arguments.push_back(element.asString());
@@ -210,15 +220,25 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
 }
 
 int sendCustomOSC(PuaraController::EventResume puaraEvent) {
-    if (puaraEvent.eventAction == -1)
-        return 1;
+    if (puaraEvent.eventAction == -1) return 1;
+
+    if (puaraEvent.controller != custom_mappings[puaraEvent.eventName].controller_id) return 2;
 
     lo::Message msg;
+    float min_range = custom_mappings[puaraEvent.eventName].min_range;
+    float max_range = custom_mappings[puaraEvent.eventName].max_range;
+
     switch (puaraEvent.eventType) {
         case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
             for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
-                if (argument == "value") { 
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
+                if (argument == "value") {
+                    if (min_range != max_range) {
+                        msg.add(puaracontroller.mapRange(
+                            puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value,
+                            0, 1, min_range, max_range));
+                    } else {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
+                    }
                 } else if (argument == "timestamp") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
                 } 
@@ -229,9 +249,21 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                 case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "X") {
-                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.X);
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.analogL.X,
+                                    -32768, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.X);
+                            };
                         } else if (argument == "Y") {
-                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.analogL.Y,
+                                    -32768, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
+                            };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
                         }
@@ -240,21 +272,55 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                 case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "X") {
-                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.X);
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.analogR.X,
+                                    -32768, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.X);
+                            };
                         } else if (argument == "Y") {
-                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.Y);
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.analogR.Y,
+                                    -32768, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.Y);
+                            };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
                         }
                     }
                     break;
                 case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.value);
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
+                    for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                        if (argument == "value") {
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.triggerL.value,
+                                    0, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.value);
+                            };
+                        } else if (argument == "timestamp") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
+                        }
+                    }
                     break;
                 case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.value);
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
+                    for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
+                        if (argument == "value") {
+                            if (min_range != max_range) {
+                                msg.add(puaracontroller.mapRange(
+                                    puaracontroller.controllers[puaraEvent.controller].state.triggerR.value,
+                                    0, 32768, min_range, max_range));
+                            } else {
+                                msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.value);
+                            };
+                        } else if (argument == "timestamp") {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
+                        }
+                    }
                     break;
             }
             break;
@@ -265,9 +331,21 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                 } else if (argument == "fingerId") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.fingerId);
                 } else if (argument == "X") {
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.X);
+                    if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.touch.X,
+                                0.0f, 1.0f, min_range, max_range));
+                    } else {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.X);
+                    };
                 } else if (argument == "Y") {
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
+                    if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.touch.Y,
+                                0.0f, 1.0f, min_range, max_range));
+                    } else {
+                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
+                    };
                 }
             }
             break;
@@ -275,21 +353,57 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
             if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
                 for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                     if (argument == "X") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.X);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.accel.X,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.X);
+                        };
                     } else if (argument == "Y") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Y);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.accel.Y,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Y);
+                        };
                     } else if (argument == "Z") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Z);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.accel.Z,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Z);
+                        };
                     }
                 }
             } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
                 for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                     if (argument == "X") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.X);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.gyro.X,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.X);
+                        };
                     } else if (argument == "Y") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Y);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.gyro.Y,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Y);
+                        };
                     } else if (argument == "Z") {
-                        msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Z);
+                        if (min_range != max_range) {
+                            msg.add(puaracontroller.mapRange(
+                                puaracontroller.controllers[puaraEvent.controller].state.gyro.Z,
+                                -40.0f, 40.0f, min_range, max_range));
+                        } else {
+                            msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Z);
+                        };
                     }
                 }
             }
@@ -321,11 +435,15 @@ void readSDL() {
 
 int main(int argc, char* argv[]) {
 
+    std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
+              << "                             Controller -> OSC/MIDI bridge                  \n"
+              << std::endl;
+    
     bool useConfig = false;
     std::string jsonFileName;
 
     int option;
-    while ((option = getopt(argc, argv, "hc::")) != -1) {
+    while ((option = getopt(argc, argv, "hc: ")) != -1) {
         switch (option) {
             case 'h':
                 printHelp(argv[0]);

@@ -22,14 +22,14 @@
         },
         {
             "internal_address": "triggerright",
-            "controller_id": 1,
+            "controller_id": 0,
             "forward_namespace": "/control/volume",
             "forward_arguments": ["value"],
             "range": {"min": 0, "max": 127}
         },
         {
             "internal_address": "accel",
-            "controller_id": 0,
+            "controller_id": 1,
             "forward_namespace": "/motion",
             "forward_arguments": ["X", "Z"],
             "range": {"min": -90, "max": 90}

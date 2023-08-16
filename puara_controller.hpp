@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <cmath>
 
 
 class PuaraController {
@@ -34,6 +35,10 @@ class PuaraController {
         int analogDeadZone = 128;
         bool enableMotion = true;
     
+        double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
+        int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
+        float mapRange(float in, float inMin, float inMax, float outMin, float outMax);
+
         template<typename T>
         class CircularBuffer {
             public:

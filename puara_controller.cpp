@@ -432,3 +432,15 @@ bool PuaraController::isSensorChanged_(int joy_index, std::string sensor, std::s
     } 
     return answer; 
 }
+
+double PuaraController::mapRange(double in, double inMin, double inMax, double outMin, double outMax) {
+    return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}
+
+int PuaraController::mapRange(int in, int inMin, int inMax, float outMin, float outMax) {
+    return round((in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+}
+
+float PuaraController::mapRange(float in, float inMin, float inMax, float outMin, float outMax) {
+    return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}
