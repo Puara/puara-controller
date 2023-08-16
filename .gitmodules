@@ -4,7 +4,7 @@
 [submodule "include/SDL"]
 	path = include/SDL
 	url = https://github.com/libsdl-org/SDL.git
-	branch = SDL2
+	branch = main
 [submodule "include/liblo"]
 	path = include/liblo
 	url = https://github.com/radarsat1/liblo.git

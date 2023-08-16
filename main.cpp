@@ -1,5 +1,5 @@
 //****************************************************************************//
-// Puara Controller standalone - Connect with game controllers using SDL2     //
+// Puara Controller standalone - Connect with game controllers using SDL3     //
 //                               Controller -> OSC/MIDI bridge                //
 // https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
@@ -60,12 +60,12 @@ struct Midi {
 std::vector<Midi> puara_midi;
 
 void printHelp(const char* programName) {
-    std::cout << " Puara Controller standalone - Connect with game controllers using SDL2     \n"
-              << "                               Controller -> OSC/MIDI bridge                \n"
-              << " https://github.com/Puara/puara-controller                                  \n"
-              << " Metalab - Société des Arts Technologiques (SAT)                            \n"
-              << " Input Devices and Music Interaction Laboratory (IDMIL), McGill University  \n"
-              << " Edu Meneses (2023)                                                         \n"
+    std::cout << "Puara Controller standalone - Connect with game controllers using SDL3     \n"
+              << "                              Controller -> OSC/MIDI bridge                \n"
+              << "https://github.com/Puara/puara-controller                                  \n"
+              << "Metalab - Société des Arts Technologiques (SAT)                            \n"
+              << "Input Devices and Music Interaction Laboratory (IDMIL), McGill University  \n"
+              << "Edu Meneses (2023)                                                         \n"
               << "\nUsage: " << programName << " [options] <json_file>\n"
               << "Options:\n"
               << "  -h,       Show help message\n"
@@ -170,39 +170,39 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
 
     lo::Message msg;
     switch (puaraEvent.eventType) {
-        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
             break;
-        case SDL_CONTROLLERAXISMOTION:
+        case SDL_EVENT_GAMEPAD_AXIS_MOTION:
             switch (puaraEvent.eventAction) {
-                case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
+                case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.X);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
                     break;
-                case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
+                case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.X);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.Y);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.value);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.value);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
                     break;
             }
             break;
-        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+        case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchId);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.fingerId);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.X);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
             break;
-        case SDL_CONTROLLERSENSORUPDATE:
+        case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
             if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.X);
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Y);
@@ -229,7 +229,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
     float max_range = custom_mappings[puaraEvent.eventName].max_range;
 
     switch (puaraEvent.eventType) {
-        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
             for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                 if (argument == "value") {
                     if (min_range != max_range) {
@@ -244,9 +244,9 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                 } 
             }
             break;
-        case SDL_CONTROLLERAXISMOTION:
+        case SDL_EVENT_GAMEPAD_AXIS_MOTION:
             switch (puaraEvent.eventAction) {
-                case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
+                case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "X") {
                             if (min_range != max_range) {
@@ -269,7 +269,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         }
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
+                case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "X") {
                             if (min_range != max_range) {
@@ -292,7 +292,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         }
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "value") {
                             if (min_range != max_range) {
@@ -307,7 +307,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         }
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
                     for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                         if (argument == "value") {
                             if (min_range != max_range) {
@@ -324,7 +324,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     break;
             }
             break;
-        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+        case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                 if (argument == "touchId") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchId);
@@ -349,7 +349,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                 }
             }
             break;
-        case SDL_CONTROLLERSENSORUPDATE:
+        case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
             if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
                 for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                     if (argument == "X") {
@@ -435,8 +435,8 @@ void readSDL() {
 
 int main(int argc, char* argv[]) {
 
-    std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
-              << "                             Controller -> OSC/MIDI bridge                  \n"
+    std::cout << "Puara Controller standalone - Connect with game controllers using SDL3\n"
+              << "                              Controller -> OSC/MIDI bridge           \n"
               << std::endl;
     
     bool useConfig = false;

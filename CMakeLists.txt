@@ -19,4 +19,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/liblo 
 )
 
-target_link_libraries(${PROJECT_NAME} SDL2-static jsoncpp_static liblo_static)
+target_link_libraries(${PROJECT_NAME} SDL3-static jsoncpp_static liblo_static)

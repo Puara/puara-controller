@@ -22,8 +22,7 @@ class PuaraController {
     public:
         int start();
         int openController(int joy_index);
-        int openAllControllers();
-        struct EventResume {int controller; unsigned int eventType; int eventAction; std::string eventName;};
+        struct EventResume {unsigned int controller; unsigned int eventType; int eventAction; std::string eventName;};
         EventResume pullSDLEvent(SDL_Event event);
         int rumble(int controllerID, int time, float low_freq, float hi_freq);
         void printEvent(EventResume eventResume);
@@ -115,13 +114,13 @@ class PuaraController {
             public:
                 Controller() = default;
                 explicit Controller(int move_buffer_size) : buffer(move_buffer_size) {};
-                Controller(int id, SDL_GameController* instance, int move_buffer_size);
+                Controller(int id, SDL_Gamepad* instance, int move_buffer_size);
                 ControllerState state;
             private:
                 friend class PuaraController;
                 bool isOpen = false;
                 int id;
-                SDL_GameController* instance;
+                SDL_Gamepad* instance;
                 CircularBuffer<ControllerState> buffer;
         };
 

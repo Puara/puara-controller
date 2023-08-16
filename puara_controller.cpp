@@ -11,51 +11,51 @@
 
 std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraController::SDL2Name = {
     {"events",{ /* Supported Puara Controller SDL events */
-        {SDL_CONTROLLERDEVICEADDED,"added"},
-        {SDL_CONTROLLERDEVICEREMOVED,"removed"},
-        {SDL_CONTROLLERBUTTONDOWN,"button"},
-        {SDL_CONTROLLERBUTTONUP,"button"},
-        {SDL_CONTROLLERAXISMOTION,"axis"},
-        {SDL_CONTROLLERSENSORUPDATE,"motion"},
-        {SDL_CONTROLLERTOUCHPADDOWN,"touch"},
-        {SDL_CONTROLLERTOUCHPADMOTION,"touch"},
-        {SDL_CONTROLLERTOUCHPADUP,"touch"},
+        {SDL_EVENT_GAMEPAD_ADDED,"added"},
+        {SDL_EVENT_GAMEPAD_REMOVED,"removed"},
+        {SDL_EVENT_GAMEPAD_BUTTON_DOWN,"button"},
+        {SDL_EVENT_GAMEPAD_BUTTON_UP,"button"},
+        {SDL_EVENT_GAMEPAD_AXIS_MOTION,"axis"},
+        {SDL_EVENT_GAMEPAD_SENSOR_UPDATE,"motion"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN,"touch"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION,"touch"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_UP,"touch"},
         //{SDL_MULTIGESTURE,"touch"}
     }},
     {"button",{ /* This list is generated from SDL_GameControllerButton */
-        {SDL_CONTROLLER_BUTTON_INVALID,"invalid"},
-        {SDL_CONTROLLER_BUTTON_A,"A"},
-        {SDL_CONTROLLER_BUTTON_B,"B"},
-        {SDL_CONTROLLER_BUTTON_X,"X"},
-        {SDL_CONTROLLER_BUTTON_Y,"Y"},
-        {SDL_CONTROLLER_BUTTON_BACK,"back"},
-        {SDL_CONTROLLER_BUTTON_GUIDE,"guide"},
-        {SDL_CONTROLLER_BUTTON_START,"start"},
-        {SDL_CONTROLLER_BUTTON_LEFTSTICK,"leftstick"},
-        {SDL_CONTROLLER_BUTTON_RIGHTSTICK,"rightstick"},
-        {SDL_CONTROLLER_BUTTON_LEFTSHOULDER,"leftshoulder"},
-        {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,"rightshoulder"},
-        {SDL_CONTROLLER_BUTTON_DPAD_UP,"dpad_up"},
-        {SDL_CONTROLLER_BUTTON_DPAD_DOWN,"dpad_down"},
-        {SDL_CONTROLLER_BUTTON_DPAD_LEFT,"dpad_left"},
-        {SDL_CONTROLLER_BUTTON_DPAD_RIGHT,"dpad_right"},
-        {SDL_CONTROLLER_BUTTON_MISC1, "misc1"},
-        {SDL_CONTROLLER_BUTTON_PADDLE1,"paddle1"},
-        {SDL_CONTROLLER_BUTTON_PADDLE2,"paddle2"},
-        {SDL_CONTROLLER_BUTTON_PADDLE3,"paddle3"},
-        {SDL_CONTROLLER_BUTTON_PADDLE4,"paddle4"},
-        {SDL_CONTROLLER_BUTTON_TOUCHPAD,"touchpadbutton"},
-        {SDL_CONTROLLER_BUTTON_MAX,"max_btn"}
+        {SDL_GAMEPAD_BUTTON_INVALID,"invalid"},
+        {SDL_GAMEPAD_BUTTON_A,"A"},
+        {SDL_GAMEPAD_BUTTON_B,"B"},
+        {SDL_GAMEPAD_BUTTON_X,"X"},
+        {SDL_GAMEPAD_BUTTON_Y,"Y"},
+        {SDL_GAMEPAD_BUTTON_BACK,"back"},
+        {SDL_GAMEPAD_BUTTON_GUIDE,"guide"},
+        {SDL_GAMEPAD_BUTTON_START,"start"},
+        {SDL_GAMEPAD_BUTTON_LEFT_STICK,"leftstick"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_STICK,"rightstick"},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,"leftshoulder"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,"rightshoulder"},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP,"dpad_up"},
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN,"dpad_down"},
+        {SDL_GAMEPAD_BUTTON_DPAD_LEFT,"dpad_left"},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT,"dpad_right"},
+        {SDL_GAMEPAD_BUTTON_MISC1, "misc1"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1,"paddle1"},
+        {SDL_GAMEPAD_BUTTON_LEFT_PADDLE1,"paddle2"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2,"paddle3"},
+        {SDL_GAMEPAD_BUTTON_LEFT_PADDLE2,"paddle4"},
+        {SDL_GAMEPAD_BUTTON_TOUCHPAD,"touchpadbutton"},
+        {SDL_GAMEPAD_BUTTON_MAX,"max_btn"}
     }},
     {"axis",{ /* This list is generated from SDL_GameControllerAxis */
-        {SDL_CONTROLLER_AXIS_INVALID,"invalid"},
-        {SDL_CONTROLLER_AXIS_LEFTX,"analogleft"},
-        {SDL_CONTROLLER_AXIS_LEFTY,"analogleft"},
-        {SDL_CONTROLLER_AXIS_RIGHTX,"analogright"},
-        {SDL_CONTROLLER_AXIS_RIGHTY,"analogright"},
-        {SDL_CONTROLLER_AXIS_TRIGGERLEFT,"triggerleft"},
-        {SDL_CONTROLLER_AXIS_TRIGGERRIGHT,"triggerright"},
-        {SDL_CONTROLLER_AXIS_MAX,"max_axis"}
+        {SDL_GAMEPAD_AXIS_INVALID,"invalid"},
+        {SDL_GAMEPAD_AXIS_LEFTX,"analogleft"},
+        {SDL_GAMEPAD_AXIS_LEFTY,"analogleft"},
+        {SDL_GAMEPAD_AXIS_RIGHTX,"analogright"},
+        {SDL_GAMEPAD_AXIS_RIGHTY,"analogright"},
+        {SDL_GAMEPAD_AXIS_LEFT_TRIGGER,"triggerleft"},
+        {SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,"triggerright"},
+        {SDL_GAMEPAD_AXIS_MAX,"max_axis"}
     }},
     {"motion",{ /* This list is generated from SDL_SensorType */
         {SDL_SENSOR_INVALID,"invalid"},
@@ -70,7 +70,7 @@ std::unordered_map<std::string, std::unordered_map<int, std::string>> PuaraContr
 
 int PuaraController::start() {
     std::cout << "Starting Puara Controller..." << std::endl;
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) < 0) {
+    if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR) < 0) {
         std::cerr << "Could not initialize sdl2: " << SDL_GetError() << std::endl;
         return 1;
     } else {
@@ -85,57 +85,47 @@ int PuaraController::rumble(int controllerID, int time=1000, float lowFreq=1.0, 
     int rangedTime = clip_(time, 10, 10000);
     float rangedLowFreq = clip_(lowFreq, 0.0f, 1.0f) * 65535;
     float rangedHiFreq = clip_(hiFreq, 0.0f, 1.0f) * 65535;
-    SDL_GameControllerRumble(controllers[rangedControllerID].instance, rangedLowFreq, rangedHiFreq, time);
+    SDL_RumbleGamepad(controllers[rangedControllerID].instance, rangedLowFreq, rangedHiFreq, time);
     if (verbose) std::cout << "Controller " << rangedControllerID << " rumble!" << std::endl;
     return 0;
 }
 
 int PuaraController::openController(int joy_index) {
-    if (SDL_IsGameController(joy_index)) {
+    if (SDL_IsGamepad(joy_index)) {
         std::cout << "New game controller found. Opening...\n" << std::endl;
-        Controller controller_instance(joy_index, SDL_GameControllerOpen(joy_index), move_buffer_size);
+        Controller controller_instance(joy_index, SDL_OpenGamepad(joy_index), move_buffer_size);
         controllers.insert({joy_index, controller_instance});
         if (controllers[joy_index].isOpen) {
-            std::cout << "\nController \""<< SDL_GameControllerNameForIndex(joy_index) 
+            std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index) 
                       << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
         }
         if (enableMotion) {
-            if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
+            if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
                 if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
-            if (SDL_GameControllerSetSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
+            if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
                 if (verbose) std::cout << "Could not enable the acclelerometer for this controller" << std::endl;
-            switch (SDL_GameControllerTypeForIndex(joy_index)){
-                case SDL_CONTROLLER_TYPE_XBOX360: case SDL_CONTROLLER_TYPE_XBOXONE:
+            switch (SDL_GetGamepadInstanceType(joy_index)){
+                case SDL_GAMEPAD_TYPE_XBOX360: case SDL_GAMEPAD_TYPE_XBOXONE:
                     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "1");
                     break;
-                case SDL_CONTROLLER_TYPE_PS4:
+                case SDL_GAMEPAD_TYPE_PS4:
                     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
                     break;
-                case SDL_CONTROLLER_TYPE_PS5:
+                case SDL_GAMEPAD_TYPE_PS5:
                     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
                     break;
             }
         }
         std::cout << "This controller has "
-                  << SDL_GameControllerGetNumTouchpads(controllers[joy_index].instance)
+                  << SDL_GetNumGamepadTouchpads(controllers[joy_index].instance)
                   << " touchpad(s) and can use up to "
-                  << SDL_GameControllerGetNumTouchpadFingers(controllers[joy_index].instance, 0)
+                  << SDL_GetNumGamepadTouchpadFingers(controllers[joy_index].instance, 0)
                   << " finger(s) simultaneusly" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
         return 1;
     } 
-}
-
-int PuaraController::openAllControllers() {
-    if (SDL_NumJoysticks() == 0) {
-        std::cerr << "Warning: could not find any controller" << std::endl;
-        return 1;
-    }
-    for (int i = 0; i < SDL_NumJoysticks(); i++)
-        openController(i);
-    return 0;
 }
 
 float PuaraController::clip_(float n, float lower, float upper) {
@@ -159,109 +149,109 @@ int PuaraController::applyAnalogDeadZone_(int in) {
 
 PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
     EventResume answer = {
-        .controller = event.cdevice.which,
+        .controller = event.gdevice.which,
         .eventType = event.type,
         .eventAction = 0
     };
-    if (event.type == SDL_QUIT) {
+    if (event.type == SDL_EVENT_QUIT) {
         sdl_quit_ = true;
-    } else if (event.type == SDL_CONTROLLERDEVICEADDED) {
-        openController(event.cdevice.which);
+    } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
+        openController(event.gdevice.which);
     }
     switch (event.type) {
-        case SDL_CONTROLLERDEVICEREMOVED:
-                SDL_GameControllerClose(controllers[event.cdevice.which].instance);
-                controllers.erase(event.cdevice.which);
-                if (verbose) std::cout << "Controller " << event.cdevice.which << " vanished!" << std::endl;
+        case SDL_EVENT_GAMEPAD_REMOVED:
+                SDL_CloseGamepad(controllers[event.gdevice.which].instance);
+                controllers.erase(event.gdevice.which);
+                if (verbose) std::cout << "Controller " << event.gdevice.which << " vanished!" << std::endl;
             break;
-        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
-            controllers[event.cdevice.which].state.button[event.cbutton.button].value = event.cbutton.state;
-            answer.eventAction = event.cbutton.button;
-            answer.eventName = SDL2Name["button"][event.cbutton.button];
-            controllers[event.cdevice.which].state.button[event.cbutton.button].event_duration = event.cbutton.timestamp - controllers[event.cdevice.which].state.button[event.cbutton.button].event_timestamp;
-            controllers[event.cdevice.which].state.button[event.cbutton.button].event_timestamp = event.cbutton.timestamp;
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
+            controllers[event.gdevice.which].state.button[event.gbutton.button].value = event.gbutton.state;
+            answer.eventAction = event.gbutton.button;
+            answer.eventName = SDL2Name["button"][event.gbutton.button];
+            controllers[event.gdevice.which].state.button[event.gbutton.button].event_duration = event.gbutton.timestamp - controllers[event.gdevice.which].state.button[event.gbutton.button].event_timestamp;
+            controllers[event.gdevice.which].state.button[event.gbutton.button].event_timestamp = event.gbutton.timestamp;
             break;
-        case SDL_CONTROLLERAXISMOTION:
-            switch (event.caxis.axis) {
-                case SDL_CONTROLLER_AXIS_LEFTX:
-                    controllers[event.cdevice.which].state.analogL.X = applyAnalogDeadZone_(event.caxis.value);
-                    if ( isSensorChanged_(event.cdevice.which, "analog", "l") ) {
-                        controllers[event.cdevice.which].state.analogL.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.analogL.event_timestamp;
-                        controllers[event.cdevice.which].state.analogL.event_timestamp = event.caxis.timestamp;
+        case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+            switch (event.gaxis.axis) {
+                case SDL_GAMEPAD_AXIS_LEFTX:
+                    controllers[event.gdevice.which].state.analogL.X = applyAnalogDeadZone_(event.gaxis.value);
+                    if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
+                        controllers[event.gdevice.which].state.analogL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp;
+                        controllers[event.gdevice.which].state.analogL.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_LEFTY:
-                    controllers[event.cdevice.which].state.analogL.Y = applyAnalogDeadZone_(event.caxis.value);
-                    if ( isSensorChanged_(event.cdevice.which, "analog", "l") ) {
-                        controllers[event.cdevice.which].state.analogL.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.analogL.event_timestamp;
-                        controllers[event.cdevice.which].state.analogL.event_timestamp = event.caxis.timestamp;
+                case SDL_GAMEPAD_AXIS_LEFTY:
+                    controllers[event.gdevice.which].state.analogL.Y = applyAnalogDeadZone_(event.gaxis.value);
+                    if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
+                        controllers[event.gdevice.which].state.analogL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp;
+                        controllers[event.gdevice.which].state.analogL.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_RIGHTX:
-                    controllers[event.cdevice.which].state.analogR.X = applyAnalogDeadZone_(event.caxis.value);
-                    if ( isSensorChanged_(event.cdevice.which, "analog", "r") ) {
-                        controllers[event.cdevice.which].state.analogR.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.analogR.event_timestamp;
-                        controllers[event.cdevice.which].state.analogR.event_timestamp = event.caxis.timestamp;
+                case SDL_GAMEPAD_AXIS_RIGHTX:
+                    controllers[event.gdevice.which].state.analogR.X = applyAnalogDeadZone_(event.gaxis.value);
+                    if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
+                        controllers[event.gdevice.which].state.analogR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp;
+                        controllers[event.gdevice.which].state.analogR.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_RIGHTY:
-                    controllers[event.cdevice.which].state.analogR.Y = applyAnalogDeadZone_(event.caxis.value);
-                    if ( isSensorChanged_(event.cdevice.which, "analog", "r") ) {
-                        controllers[event.cdevice.which].state.analogR.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.analogR.event_timestamp;
-                        controllers[event.cdevice.which].state.analogR.event_timestamp = event.caxis.timestamp;
+                case SDL_GAMEPAD_AXIS_RIGHTY:
+                    controllers[event.gdevice.which].state.analogR.Y = applyAnalogDeadZone_(event.gaxis.value);
+                    if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
+                        controllers[event.gdevice.which].state.analogR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp;
+                        controllers[event.gdevice.which].state.analogR.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-                    controllers[event.cdevice.which].state.triggerL.value = event.caxis.value;
-                    if ( isSensorChanged_(event.cdevice.which, "trigger", "l") ) {
-                        controllers[event.cdevice.which].state.triggerL.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.triggerL.event_timestamp;
-                        controllers[event.cdevice.which].state.triggerL.event_timestamp = event.caxis.timestamp;
+                case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+                    controllers[event.gdevice.which].state.triggerL.value = event.gaxis.value;
+                    if ( isSensorChanged_(event.gdevice.which, "trigger", "l") ) {
+                        controllers[event.gdevice.which].state.triggerL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerL.event_timestamp;
+                        controllers[event.gdevice.which].state.triggerL.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-                    controllers[event.cdevice.which].state.triggerR.value = event.caxis.value;
-                    if ( isSensorChanged_(event.cdevice.which, "trigger", "r") ) {
-                        controllers[event.cdevice.which].state.triggerR.event_duration = event.caxis.timestamp - controllers[event.cdevice.which].state.triggerR.event_timestamp;
-                        controllers[event.cdevice.which].state.triggerR.event_timestamp = event.caxis.timestamp;
+                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
+                    controllers[event.gdevice.which].state.triggerR.value = event.gaxis.value;
+                    if ( isSensorChanged_(event.gdevice.which, "trigger", "r") ) {
+                        controllers[event.gdevice.which].state.triggerR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerR.event_timestamp;
+                        controllers[event.gdevice.which].state.triggerR.event_timestamp = event.gaxis.timestamp;
                     }
                     break;
             }
-            answer.eventAction = event.caxis.axis;
-            answer.eventName = SDL2Name["axis"][event.caxis.axis];
+            answer.eventAction = event.gaxis.axis;
+            answer.eventName = SDL2Name["axis"][event.gaxis.axis];
             break;
-        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+        case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             answer.eventAction = 0;
             answer.eventName = SDL2Name["touch"][answer.eventAction];
-            controllers[event.cdevice.which].state.touch.action = event.type;
-            controllers[event.cdevice.which].state.touch.touchId = event.tfinger.touchId;
-            controllers[event.cdevice.which].state.touch.fingerId = event.tfinger.fingerId;
-            controllers[event.cdevice.which].state.touch.X = event.tfinger.y;
-            controllers[event.cdevice.which].state.touch.Y = event.tfinger.x;
-            controllers[event.cdevice.which].state.touch.dX = event.tfinger.dy;
-            controllers[event.cdevice.which].state.touch.dY = event.tfinger.dx;
-            controllers[event.cdevice.which].state.touch.pressure = event.tfinger.pressure;
+            controllers[event.gdevice.which].state.touch.action = event.type;
+            controllers[event.gdevice.which].state.touch.touchId = event.tfinger.touchId;
+            controllers[event.gdevice.which].state.touch.fingerId = event.tfinger.fingerId;
+            controllers[event.gdevice.which].state.touch.X = event.tfinger.y;
+            controllers[event.gdevice.which].state.touch.Y = event.tfinger.x;
+            controllers[event.gdevice.which].state.touch.dX = event.tfinger.dy;
+            controllers[event.gdevice.which].state.touch.dY = event.tfinger.dx;
+            controllers[event.gdevice.which].state.touch.pressure = event.tfinger.pressure;
             break;
         // case SDL_MULTIGESTURE:
-        //     controllers[event.cdevice.which].state.multitouch.touchId = event.mgesture.touchId;
-        //     controllers[event.cdevice.which].state.multitouch.dTheta = event.mgesture.dTheta;
-        //     controllers[event.cdevice.which].state.multitouch.dDist = event.mgesture.dDist;
-        //     controllers[event.cdevice.which].state.multitouch.X = event.mgesture.x;
-        //     controllers[event.cdevice.which].state.multitouch.Y = event.mgesture.y;
-        //     controllers[event.cdevice.which].state.multitouch.numFingers = event.mgesture.numFingers;
+        //     controllers[event.gdevice.which].state.multitouch.touchId = event.mgesture.touchId;
+        //     controllers[event.gdevice.which].state.multitouch.dTheta = event.mgesture.dTheta;
+        //     controllers[event.gdevice.which].state.multitouch.dDist = event.mgesture.dDist;
+        //     controllers[event.gdevice.which].state.multitouch.X = event.mgesture.x;
+        //     controllers[event.gdevice.which].state.multitouch.Y = event.mgesture.y;
+        //     controllers[event.gdevice.which].state.multitouch.numFingers = event.mgesture.numFingers;
         //     break;
-        case SDL_CONTROLLERSENSORUPDATE:
-            if (event.csensor.sensor == SDL_SENSOR_ACCEL) {
-                controllers[event.cdevice.which].state.accel.X = event.csensor.data[0];
-                controllers[event.cdevice.which].state.accel.Y = event.csensor.data[1];
-                controllers[event.cdevice.which].state.accel.Z = event.csensor.data[2];
+        case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
+            if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
+                controllers[event.gdevice.which].state.accel.X = event.gsensor.data[0];
+                controllers[event.gdevice.which].state.accel.Y = event.gsensor.data[1];
+                controllers[event.gdevice.which].state.accel.Z = event.gsensor.data[2];
             };
-            if (event.csensor.sensor == SDL_SENSOR_GYRO) {
-                controllers[event.cdevice.which].state.gyro.X = event.csensor.data[0];
-                controllers[event.cdevice.which].state.gyro.Y = event.csensor.data[1];
-                controllers[event.cdevice.which].state.gyro.Z = event.csensor.data[2];
+            if (event.gsensor.sensor == SDL_SENSOR_GYRO) {
+                controllers[event.gdevice.which].state.gyro.X = event.gsensor.data[0];
+                controllers[event.gdevice.which].state.gyro.Y = event.gsensor.data[1];
+                controllers[event.gdevice.which].state.gyro.Z = event.gsensor.data[2];
             };
-            answer.eventAction = event.csensor.sensor;
-            answer.eventName = SDL2Name["motion"][event.csensor.sensor];
+            answer.eventAction = event.gsensor.sensor;
+            answer.eventName = SDL2Name["motion"][event.gsensor.sensor];
             break;
         default:
             answer.eventAction = -1;
@@ -272,36 +262,36 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
 
 void PuaraController::printEvent(PuaraController::EventResume eventResume, bool printSensor) {
     switch (eventResume.eventType) {
-        case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
             std::cout << "Event on controller " << eventResume.controller
                       << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction]
                       << " " << controllers[eventResume.controller].state.button[eventResume.eventAction].value
                       << " " << controllers[eventResume.controller].state.button[eventResume.eventAction].event_duration << std::endl;
             break;
-        case SDL_CONTROLLERAXISMOTION:
+        case SDL_EVENT_GAMEPAD_AXIS_MOTION:
             std::cout << "Event on controller " << eventResume.controller << ": ";
             switch (eventResume.eventAction) {
-                case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_LEFTY:
+                case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
                     std::cout << " Analog_left " << controllers[eventResume.controller].state.analogL.X << " "
                               << controllers[eventResume.controller].state.analogL.Y
                               << " " << controllers[eventResume.controller].state.analogL.event_duration << std::endl;
                     break;
-                case SDL_CONTROLLER_AXIS_RIGHTX: case SDL_CONTROLLER_AXIS_RIGHTY:
+                case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
                     std::cout << " Analog_right " << controllers[eventResume.controller].state.analogR.X << " "
                               << controllers[eventResume.controller].state.analogR.Y
                               << " " << controllers[eventResume.controller].state.analogR.event_duration << std::endl;
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
                     std::cout << " trigger_left " << controllers[eventResume.controller].state.triggerL.value
                               << " " << controllers[eventResume.controller].state.triggerL.event_duration << std::endl;
                     break;
-                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
                     std::cout << " trigger_right " << controllers[eventResume.controller].state.triggerR.value
                               << " " << controllers[eventResume.controller].state.triggerR.event_duration << std::endl;
                     break;
             }
             break;
-        case SDL_CONTROLLERTOUCHPADDOWN: case SDL_CONTROLLERTOUCHPADMOTION: case SDL_CONTROLLERTOUCHPADUP:
+        case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
         std::cout << "Event on controller " << eventResume.controller << ": ";
             std::cout << " Touchpad " << controllers[eventResume.controller].state.touch.touchId << ":"
                       << " ID: " << controllers[eventResume.controller].state.touch.fingerId
@@ -323,7 +313,7 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
         //               << " pr: " << controllers[eventResume.controller].state.multitouch.numFingers
         //               << std::endl;
         //     break;
-        case SDL_CONTROLLERSENSORUPDATE:
+        case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
             if (printSensor) {
                 std::cout << "Event on controller " << eventResume.controller
                           << ": " << SDL2Name[SDL2Name["events"][eventResume.eventType]][eventResume.eventAction];
@@ -385,7 +375,7 @@ T PuaraController::CircularBuffer<T>::pop() {
     return item;
 }
 
-PuaraController::Controller::Controller(int id, SDL_GameController* instance, int move_buffer_size) 
+PuaraController::Controller::Controller(int id, SDL_Gamepad* instance, int move_buffer_size) 
     : id(id), instance(instance), buffer(move_buffer_size) {
         for (auto const& i: PuaraController::SDL2Name["button"]) {
             Button btnInstance;
