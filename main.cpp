@@ -1,6 +1,6 @@
 //****************************************************************************//
-// Puara Controller standalone - connect with game controllers using SDL2     //
-//                             Controller -> OSC/MIDI bridge                  //
+// Puara Controller standalone - Connect with game controllers using SDL2     //
+//                               Controller -> OSC/MIDI bridge                //
 // https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
@@ -60,8 +60,8 @@ struct Midi {
 std::vector<Midi> puara_midi;
 
 void printHelp(const char* programName) {
-    std::cout << " Puara Controller standalone - connect with game controllers using SDL2     \n"
-              << "                             Controller -> OSC/MIDI bridge                  \n"
+    std::cout << " Puara Controller standalone - Connect with game controllers using SDL2     \n"
+              << "                               Controller -> OSC/MIDI bridge                \n"
               << " https://github.com/Puara/puara-controller                                  \n"
               << " Metalab - Société des Arts Technologiques (SAT)                            \n"
               << " Input Devices and Music Interaction Laboratory (IDMIL), McGill University  \n"
