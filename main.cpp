@@ -310,6 +310,10 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             } else {
                                 msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.Y);
                             };
+                        } else if (argument == "azimuth") {
+                            msg.add(calculateAngle(
+                                puaracontroller.controllers[puaraEvent.controller].state.analogR.X,
+                                puaracontroller.controllers[puaraEvent.controller].state.analogR.Y));
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
                         } else if (!argument.empty() && argument.front() == '$') {
