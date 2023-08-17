@@ -11,7 +11,7 @@ This program converts game controller data into OSC.
       - [Messages sending x, y, and z values:](#messages-sending-x-y-and-z-values)
       - [The program also receives (default port 9000)](#the-program-also-receives-default-port-9000)
     - [OSC Forwarders](#osc-forwarders)
-  - [Troubloshoot / Extra info](#troubloshoot--extra-info)
+  - [Troubleshoot / Extra info](#troubleshoot--extra-info)
 
 ## To compile
 
@@ -74,7 +74,7 @@ Timestamps are integer values in miliseconds.
 #### Messages sending values (x and y) + duration of the last event:
 
 X and Y are integer values between -32768 and 32768.
-Timestamps are integer values in miliseconds.
+Timestamps are integer values in milliseconds.
 
 | namespace                                   | values                  |
 |---------------------------------------------|-------------------------|
@@ -84,7 +84,7 @@ Timestamps are integer values in miliseconds.
 #### Messages sending x, y, and z values:
 
 X, Y, and Z are float values between -40 and 40.
-Timestamps are integer values in miliseconds.
+Timestamps are integer values in milliseconds.
 
 | namespace                             | values                     |
 |---------------------------------------|----------------------------|
@@ -100,7 +100,7 @@ Timestamps are integer values in miliseconds.
 ### OSC Forwarders
 
 The JSON config file can also set OSC addresses for certain messages to be forwarded.
-This is useful when a specific message needs to to sent to another application that doesn't have flexibility in defining namespaces and message ranges.
+This is useful when a specific message needs to sent to another application that doesn't have flexibility in defining namespaces and message ranges.
 
 One example of the syntax to add a custom OSC forwarder is:
 
@@ -124,17 +124,19 @@ One example of the syntax to add a custom OSC forwarder is:
             "internal_address": "accel",
             "controller_id": 0,
             "forward_namespace": "/motion",
-            "forward_arguments": ["X", "Z"],
+            "forward_arguments": ["$angles", "X", "Z"],
             "range": {"min": -90, "max": 90}
         }
 ]
 ```
 
-OBS: The range parameter only modify values and axis (X, Y, and Z). It does not range timestamps.
+OBS: The range parameter only modifies values and axis (X, Y, and Z). It does not range timestamps.
+
+You can also add strings to add as arguments by using `$`, as shown in the accel example.
 
 Keep in mind that is also necessary to set the **forward_address** and **forward_port** parameters in the config section of the JSON file to forward OSC messages.
 
-## Troubloshoot / Extra info
+## Troubleshoot / Extra info
 
 Note that you may need to add udev rules to allow accessing motion and force feedback on the controllers. You can add these rules manually in your `/usr/lib/udev/rules.d/` folder. 
 One example of such rules for the DualShock3 controller:

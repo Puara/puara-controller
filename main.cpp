@@ -256,7 +256,9 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     }
                 } else if (argument == "timestamp") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
-                } 
+                } else if (!argument.empty() && argument.front() == '$') {
+                    msg.add_string(argument.substr(1));
+                }
             }
             break;
         case SDL_EVENT_GAMEPAD_AXIS_MOTION:
@@ -285,6 +287,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                                 puaracontroller.controllers[puaraEvent.controller].state.analogL.Y));
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
+                        } else if (!argument.empty() && argument.front() == '$') {
+                            msg.add_string(argument.substr(1));;
                         }
                     }
                     break;
@@ -308,6 +312,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
+                        } else if (!argument.empty() && argument.front() == '$') {
+                            msg.add_string(argument.substr(1));
                         }
                     }
                     break;
@@ -323,6 +329,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
+                        } else if (!argument.empty() && argument.front() == '$') {
+                            msg.add_string(argument.substr(1));
                         }
                     }
                     break;
@@ -338,6 +346,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
+                        } else if (!argument.empty() && argument.front() == '$') {
+                            msg.add_string(argument.substr(1));
                         }
                     }
                     break;
@@ -365,6 +375,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     } else {
                         msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
                     };
+                } else if (!argument.empty() && argument.front() == '$') {
+                    msg.add_string(argument.substr(1));
                 }
             }
             break;
@@ -395,6 +407,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         } else {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Z);
                         };
+                    } else if (!argument.empty() && argument.front() == '$') {
+                        msg.add_string(argument.substr(1));
                     }
                 }
             } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
@@ -423,6 +437,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         } else {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Z);
                         };
+                    } else if (!argument.empty() && argument.front() == '$') {
+                        msg.add_string(argument.substr(1));
                     }
                 }
             }
