@@ -1,13 +1,22 @@
-cmake_minimum_required(VERSION 3.26.4)
+cmake_minimum_required(VERSION 3.0)
+
+set( SDL_STATIC ON CACHE BOOL "" FORCE )
+set( SDL_SHARED OFF CACHE BOOL "" FORCE )
+option(WITH_STATIC "Build LIBLO static library." ON)
 
 project(puara_controller)
 
-find_package(SDL2 REQUIRED)
-find_library(LIBLO liblo lo REQUIRED)
+add_subdirectory(include/jsoncpp)
+add_subdirectory(include/liblo/cmake)
+add_subdirectory(include/SDL)
 
-include_directories("${SDL2_INCLUDE_DIRS}" "${CMAKE_CURRENT_LIST_DIR}")
+add_executable(${PROJECT_NAME} puara_controller.hpp puara_controller.cpp main.cpp)
 
-add_library(puara_controller.hpp puara_controller.cpp)
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/SDL/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/jsoncpp/include 
+    ${CMAKE_CURRENT_BINARY_DIR}/include/liblo/cmake 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/liblo 
+)
 
-add_executable(${PROJECT_NAME} puara_controller.cpp main.cpp)
-target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES} liblo.a)
+target_link_libraries(${PROJECT_NAME} SDL3-static jsoncpp_static liblo_static)

@@ -1,7 +1,7 @@
 //****************************************************************************//
 // Puara Controller module - connect with game controllers using SDL2 (hpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
-// https://github.com/Puara/puara-joystick                                    //
+// https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
 // Edu Meneses (2023) - https://www.edumeneses.com                            //
@@ -11,19 +11,18 @@
 #ifndef PUARA_CONTROLLER_H
 #define PUARA_CONTROLLER_H
 
-
-#include <SDL2/SDL.h>
+#include "SDL.h"
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <cmath>
 
 
 class PuaraController {
     public:
-        PuaraController();
+        int start();
         int openController(int joy_index);
-        int openAllControllers();
-        struct EventResume {int controller; unsigned int eventType; int eventAction;};
+        struct EventResume {unsigned int controller; unsigned int eventType; int eventAction; std::string eventName;};
         EventResume pullSDLEvent(SDL_Event event);
         int rumble(int controllerID, int time, float low_freq, float hi_freq);
         void printEvent(EventResume eventResume);
@@ -35,6 +34,10 @@ class PuaraController {
         int analogDeadZone = 128;
         bool enableMotion = true;
     
+        double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
+        int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
+        float mapRange(float in, float inMin, float inMax, float outMin, float outMax);
+
         template<typename T>
         class CircularBuffer {
             public:
@@ -79,12 +82,10 @@ class PuaraController {
         };
         struct Touch {
             int action = 0;
-            int touchId = 0;
-            int fingerId = 0;
+            int touchpad = 0;
+            int finger = 0;
             float X = 0.0;
             float Y = 0.0;
-            float dX = 0.0;
-            float dY = 0.0;
             float pressure = 0.0;
             int event_duration = 0; 
             long int event_timestamp = 0;
@@ -111,13 +112,13 @@ class PuaraController {
             public:
                 Controller() = default;
                 explicit Controller(int move_buffer_size) : buffer(move_buffer_size) {};
-                Controller(int id, SDL_GameController* instance, int move_buffer_size);
+                Controller(int id, SDL_Gamepad* instance, int move_buffer_size);
                 ControllerState state;
             private:
                 friend class PuaraController;
                 bool isOpen = false;
                 int id;
-                SDL_GameController* instance;
+                SDL_Gamepad* instance;
                 CircularBuffer<ControllerState> buffer;
         };
 
