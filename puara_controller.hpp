@@ -35,9 +35,9 @@ class PuaraController {
         bool enableMotion = true;
     
         double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
-        int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
+        // int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
         float mapRange(float in, float inMin, float inMax, float outMin, float outMax);
-        double mapRange(int in, int inMin, int inMax, double outMin, double outMax);
+        double mapRange(int in, int inMin, int inMax, float outMin, float outMax);
 
         template<typename T>
         class CircularBuffer {

@@ -223,8 +223,8 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
 
 // High-level gesture draft for azimuth
 int calculateAngle(int X, int Y) {
-    double x = puaracontroller.mapRange(X, -32768, 32767, -1.0, 1.0);
-    double y = puaracontroller.mapRange((-1*Y), -32768, 32767, -1.0, 1.0);
+    double x = puaracontroller.mapRange(X, -32768, 32767, -1.0f, 1.0f);
+    double y = puaracontroller.mapRange((-1*Y), -32768, 32767, -1.0f, 1.0f);
     double azimuth = std::atan2(x, y) * 180 / M_PI;
     return static_cast<int>(azimuth);
 }
