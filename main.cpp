@@ -197,8 +197,8 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
             }
             break;
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
-            msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchId);
-            msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.fingerId);
+            msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchpad);
+            msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.finger);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.X);
             msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
             break;
@@ -220,10 +220,15 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
 }
 
 int sendCustomOSC(PuaraController::EventResume puaraEvent) {
-    if (puaraEvent.eventAction == -1) return 1;
+    
+    if (
+        puaraEvent.eventAction == -1 ||
+        puaraEvent.controller != custom_mappings[puaraEvent.eventName].controller_id ||
+        forward_address.empty() ||
+        forward_port == 0
+    ) return 1;
 
-    if (puaraEvent.controller != custom_mappings[puaraEvent.eventName].controller_id) return 2;
-
+    lo::Address custom_osc_sender(forward_address, forward_port);
     lo::Message msg;
     float min_range = custom_mappings[puaraEvent.eventName].min_range;
     float max_range = custom_mappings[puaraEvent.eventName].max_range;
@@ -327,9 +332,9 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                 if (argument == "touchId") {
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchId);
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.touchpad);
                 } else if (argument == "fingerId") {
-                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.fingerId);
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.finger);
                 } else if (argument == "X") {
                     if (min_range != max_range) {
                             msg.add(puaracontroller.mapRange(
@@ -409,7 +414,7 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
             }
             break;
     }
-    osc_sender.send(custom_mappings[puaraEvent.eventName].forward_namespace, msg);
+    custom_osc_sender.send(custom_mappings[puaraEvent.eventName].forward_namespace, msg);
 
     return 0;
 }

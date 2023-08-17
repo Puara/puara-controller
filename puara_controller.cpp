@@ -222,14 +222,12 @@ PuaraController::EventResume PuaraController::pullSDLEvent(SDL_Event event){
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             answer.eventAction = 0;
             answer.eventName = SDL2Name["touch"][answer.eventAction];
-            controllers[event.gdevice.which].state.touch.action = event.type;
-            controllers[event.gdevice.which].state.touch.touchId = event.tfinger.touchId;
-            controllers[event.gdevice.which].state.touch.fingerId = event.tfinger.fingerId;
-            controllers[event.gdevice.which].state.touch.X = event.tfinger.y;
-            controllers[event.gdevice.which].state.touch.Y = event.tfinger.x;
-            controllers[event.gdevice.which].state.touch.dX = event.tfinger.dy;
-            controllers[event.gdevice.which].state.touch.dY = event.tfinger.dx;
-            controllers[event.gdevice.which].state.touch.pressure = event.tfinger.pressure;
+            controllers[event.gdevice.which].state.touch.action = event.gtouchpad.type;
+            controllers[event.gdevice.which].state.touch.touchpad = event.gtouchpad.touchpad;
+            controllers[event.gdevice.which].state.touch.finger = event.gtouchpad.finger;
+            controllers[event.gdevice.which].state.touch.X = event.gtouchpad.x;
+            controllers[event.gdevice.which].state.touch.Y = event.gtouchpad.y;
+            controllers[event.gdevice.which].state.touch.pressure = event.gtouchpad.pressure;
             break;
         // case SDL_MULTIGESTURE:
         //     controllers[event.gdevice.which].state.multitouch.touchId = event.mgesture.touchId;
@@ -293,12 +291,10 @@ void PuaraController::printEvent(PuaraController::EventResume eventResume, bool 
             break;
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
         std::cout << "Event on controller " << eventResume.controller << ": ";
-            std::cout << " Touchpad " << controllers[eventResume.controller].state.touch.touchId << ":"
-                      << " ID: " << controllers[eventResume.controller].state.touch.fingerId
+            std::cout << " Touchpad " << controllers[eventResume.controller].state.touch.touchpad << ":"
+                      << " ID: " << controllers[eventResume.controller].state.touch.finger
                       << "  X: " << controllers[eventResume.controller].state.touch.X
                       << "  Y: " << controllers[eventResume.controller].state.touch.Y
-                    //   << " dX: " << controllers[eventResume.controller].state.touch.dX
-                    //   << " dY: " << controllers[eventResume.controller].state.touch.dY
                     //   << " pr: " << controllers[eventResume.controller].state.touch.pressure
                       << std::endl;
             break;

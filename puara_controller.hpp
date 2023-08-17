@@ -82,12 +82,10 @@ class PuaraController {
         };
         struct Touch {
             int action = 0;
-            int touchId = 0;
-            int fingerId = 0;
+            int touchpad = 0;
+            int finger = 0;
             float X = 0.0;
             float Y = 0.0;
-            float dX = 0.0;
-            float dY = 0.0;
             float pressure = 0.0;
             int event_duration = 0; 
             long int event_timestamp = 0;
