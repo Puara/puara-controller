@@ -430,3 +430,7 @@ int PuaraController::mapRange(int in, int inMin, int inMax, float outMin, float 
 float PuaraController::mapRange(float in, float inMin, float inMax, float outMin, float outMax) {
     return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
+
+double PuaraController::mapRange(int in, int inMin, int inMax, double outMin, double outMax) {
+    return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}

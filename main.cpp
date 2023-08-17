@@ -22,6 +22,8 @@
 #include "lo/lo.h"
 #include "lo/lo_cpp.h"
 
+#include <cmath>
+
 int polling_interval = 2; // milliseconds
 bool verbose = false;
 bool print_events = false;
@@ -219,6 +221,14 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
     return 0;
 }
 
+// High-level gesture draft for azimuth
+int calculateAngle(int X, int Y) {
+    double x = puaracontroller.mapRange(X, -32768, 32767, -1.0, 1.0);
+    double y = puaracontroller.mapRange((-1*Y), -32768, 32767, -1.0, 1.0);
+    double azimuth = std::atan2(x, y) * 180 / M_PI;
+    return static_cast<int>(azimuth);
+}
+
 int sendCustomOSC(PuaraController::EventResume puaraEvent) {
     
     if (
@@ -269,6 +279,10 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             } else {
                                 msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
                             };
+                        } else if (argument == "azimuth") {
+                            msg.add(calculateAngle(
+                                puaracontroller.controllers[puaraEvent.controller].state.analogL.X,
+                                puaracontroller.controllers[puaraEvent.controller].state.analogL.Y));
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
                         }
