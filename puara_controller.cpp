@@ -120,7 +120,7 @@ int PuaraController::openController(int joy_index) {
                   << SDL_GetNumGamepadTouchpads(controllers[joy_index].instance)
                   << " touchpad(s) and can use up to "
                   << SDL_GetNumGamepadTouchpadFingers(controllers[joy_index].instance, 0)
-                  << " finger(s) simultaneusly" << std::endl;
+                  << " finger(s) simultaneously" << std::endl;
         return 0;
     } else {
         std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
