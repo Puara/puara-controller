@@ -258,10 +258,6 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
                 } else if (!argument.empty() && argument.front() == '$') {
                     msg.add_string(argument.substr(1));
-                } else if (!argument.empty() && argument.front() == '#') {
-                    msg.add(std::stof(argument.substr(1)));
-                } else if (!argument.empty() && argument.front() == '!') {
-                    msg.add(std::stoi(argument.substr(1)));
                 }
             }
             break;
@@ -285,6 +281,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             } else {
                                 msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
                             };
+                        } else if (argument == "hardcoded") {
+                            msg.add(1.0);
                         } else if (argument == "azimuth") {
                             msg.add(calculateAngle(
                                 puaracontroller.controllers[puaraEvent.controller].state.analogL.X,
@@ -383,6 +381,8 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     } else {
                         msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.Y);
                     };
+                } else if (argument == "pressure") {
+                    msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.pressure);
                 } else if (!argument.empty() && argument.front() == '$') {
                     msg.add_string(argument.substr(1));
                 }
