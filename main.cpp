@@ -258,6 +258,10 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
                 } else if (!argument.empty() && argument.front() == '$') {
                     msg.add_string(argument.substr(1));
+                } else if (!argument.empty() && argument.front() == '#') {
+                    msg.add(std::stof(argument.substr(1)));
+                } else if (!argument.empty() && argument.front() == '!') {
+                    msg.add(std::stoi(argument.substr(1)));
                 }
             }
             break;
