@@ -9,6 +9,7 @@
 
 #include "puara_controller.hpp"
 #include <iostream>
+#include <stdexcept>
 #include <chrono>
 #include <thread>
 #include <atomic>
@@ -223,16 +224,37 @@ int sendOSC(PuaraController::EventResume puaraEvent) {
 
 // High-level gesture draft for azimuth
 int calculateAngle(int X, int Y) {
-    double x = puaracontroller.mapRange(X, -32768, 32767, -1.0f, 1.0f);
-    double y = puaracontroller.mapRange((-1*Y), -32768, 32767, -1.0f, 1.0f);
+    double x = puaracontroller.mapRange(static_cast<double>(X), -32768.0, 32767.0, -1.0, 1.0);
+    double y = puaracontroller.mapRange(static_cast<double>(-1*Y), -32768.0, 32767.0, -1.0, 1.0);
     double azimuth = std::atan2(x, y) * 180 / M_PI;
     return static_cast<int>(azimuth);
 }
 
+enum ArgumentType { Integer, Float, NotANumber };
+
+int getType(const std::string& input) {
+    std::istringstream iss(input);
+    float temp;
+    if ((iss >> temp >> std::ws).eof()) {
+        return (static_cast<int>(temp) == temp) ? ArgumentType::Integer : ArgumentType::Float;
+    } else {
+        return ArgumentType::NotANumber;
+    }
+}
+
+float extractNumberFromString(const std::string& input) {
+    std::istringstream iss(input);
+    float number;
+    if (iss >> number) {
+        return number;
+    } else {
+        throw std::invalid_argument("Invalid number format");
+    }
+}
+
 int sendCustomOSC(PuaraController::EventResume puaraEvent) {
     
-    if (
-        puaraEvent.eventAction == -1 ||
+    if (puaraEvent.eventAction == -1 ||
         puaraEvent.controller != custom_mappings[puaraEvent.eventName].controller_id ||
         forward_address.empty() ||
         forward_port == 0
@@ -256,8 +278,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     }
                 } else if (argument == "timestamp") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
-                } else if (!argument.empty() && argument.front() == '$') {
-                    msg.add_string(argument.substr(1));
+                } else {
+                    switch (getType(argument)) {
+                        case ArgumentType::Integer:
+                            msg.add(static_cast<int>(extractNumberFromString(argument)));
+                            break;
+                        case ArgumentType::Float:
+                            msg.add(extractNumberFromString(argument));
+                            break;
+                        case ArgumentType::NotANumber:
+                        msg.add_string(argument);
+                            break;
+                    }
                 }
             }
             break;
@@ -281,16 +313,24 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             } else {
                                 msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.Y);
                             };
-                        } else if (argument == "hardcoded") {
-                            msg.add(1.0);
                         } else if (argument == "azimuth") {
                             msg.add(calculateAngle(
                                 puaracontroller.controllers[puaraEvent.controller].state.analogL.X,
                                 puaracontroller.controllers[puaraEvent.controller].state.analogL.Y));
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogL.event_duration);
-                        } else if (!argument.empty() && argument.front() == '$') {
-                            msg.add_string(argument.substr(1));;
+                        } else {
+                            switch (getType(argument)) {
+                                case ArgumentType::Integer:
+                                    msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                    break;
+                                case ArgumentType::Float:
+                                    msg.add(extractNumberFromString(argument));
+                                    break;
+                                case ArgumentType::NotANumber:
+                                msg.add_string(argument);
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -318,8 +358,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                                 puaracontroller.controllers[puaraEvent.controller].state.analogR.Y));
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.analogR.event_duration);
-                        } else if (!argument.empty() && argument.front() == '$') {
-                            msg.add_string(argument.substr(1));
+                        } else {
+                            switch (getType(argument)) {
+                                case ArgumentType::Integer:
+                                    msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                    break;
+                                case ArgumentType::Float:
+                                    msg.add(extractNumberFromString(argument));
+                                    break;
+                                case ArgumentType::NotANumber:
+                                msg.add_string(argument);
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -335,8 +385,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerL.event_duration);
-                        } else if (!argument.empty() && argument.front() == '$') {
-                            msg.add_string(argument.substr(1));
+                        } else {
+                            switch (getType(argument)) {
+                                case ArgumentType::Integer:
+                                    msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                    break;
+                                case ArgumentType::Float:
+                                    msg.add(extractNumberFromString(argument));
+                                    break;
+                                case ArgumentType::NotANumber:
+                                msg.add_string(argument);
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -352,8 +412,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                             };
                         } else if (argument == "timestamp") {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.triggerR.event_duration);
-                        } else if (!argument.empty() && argument.front() == '$') {
-                            msg.add_string(argument.substr(1));
+                        } else {
+                            switch (getType(argument)) {
+                                case ArgumentType::Integer:
+                                    msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                    break;
+                                case ArgumentType::Float:
+                                    msg.add(extractNumberFromString(argument));
+                                    break;
+                                case ArgumentType::NotANumber:
+                                msg.add_string(argument);
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -383,8 +453,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                     };
                 } else if (argument == "pressure") {
                     msg.add(puaracontroller.controllers[puaraEvent.controller].state.touch.pressure);
-                } else if (!argument.empty() && argument.front() == '$') {
-                    msg.add_string(argument.substr(1));
+                } else {
+                    switch (getType(argument)) {
+                        case ArgumentType::Integer:
+                            msg.add(static_cast<int>(extractNumberFromString(argument)));
+                            break;
+                        case ArgumentType::Float:
+                            msg.add(extractNumberFromString(argument));
+                            break;
+                        case ArgumentType::NotANumber:
+                        msg.add_string(argument);
+                            break;
+                    }
                 }
             }
             break;
@@ -415,8 +495,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         } else {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.accel.Z);
                         };
-                    } else if (!argument.empty() && argument.front() == '$') {
-                        msg.add_string(argument.substr(1));
+                    } else {
+                        switch (getType(argument)) {
+                            case ArgumentType::Integer:
+                                msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                break;
+                            case ArgumentType::Float:
+                                msg.add(extractNumberFromString(argument));
+                                break;
+                            case ArgumentType::NotANumber:
+                            msg.add_string(argument);
+                                break;
+                        }
                     }
                 }
             } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
@@ -445,8 +535,18 @@ int sendCustomOSC(PuaraController::EventResume puaraEvent) {
                         } else {
                             msg.add(puaracontroller.controllers[puaraEvent.controller].state.gyro.Z);
                         };
-                    } else if (!argument.empty() && argument.front() == '$') {
-                        msg.add_string(argument.substr(1));
+                    } else {
+                        switch (getType(argument)) {
+                            case ArgumentType::Integer:
+                                msg.add(static_cast<int>(extractNumberFromString(argument)));
+                                break;
+                            case ArgumentType::Float:
+                                msg.add(extractNumberFromString(argument));
+                                break;
+                            case ArgumentType::NotANumber:
+                            msg.add_string(argument);
+                                break;
+                        }
                     }
                 }
             }

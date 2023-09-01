@@ -34,10 +34,9 @@ class PuaraController {
         int analogDeadZone = 128;
         bool enableMotion = true;
     
-        double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
-        // int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
+        int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
         float mapRange(float in, float inMin, float inMax, float outMin, float outMax);
-        double mapRange(int in, int inMin, int inMax, float outMin, float outMax);
+        double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
 
         template<typename T>
         class CircularBuffer {
@@ -133,7 +132,6 @@ class PuaraController {
         int clip_(int n, int lower, int upper);
         double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
         int applyAnalogDeadZone_(int in);
-        bool isTriggerLinUse_(int joy_index);
         bool isSensorChanged_(int joy_index, std::string sensor, std::string side);
 };
 
