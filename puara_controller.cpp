@@ -194,50 +194,56 @@ namespace puara_controller {
                 controllers[event.gdevice.which].state.button[event.gbutton.button].value = event.gbutton.state;
                 currentEvent.eventAction = event.gbutton.button;
                 currentEvent.eventName = SDL2Name["button"][event.gbutton.button];
-                controllers[event.gdevice.which].state.button[event.gbutton.button].event_duration = event.gbutton.timestamp - controllers[event.gdevice.which].state.button[event.gbutton.button].event_timestamp;
+                controllers[event.gdevice.which].state.button[event.gbutton.button].event_duration = nano2mili(event.gbutton.timestamp - controllers[event.gdevice.which].state.button[event.gbutton.button].event_timestamp);
                 controllers[event.gdevice.which].state.button[event.gbutton.button].event_timestamp = event.gbutton.timestamp;
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                 switch (event.gaxis.axis) {
                     case SDL_GAMEPAD_AXIS_LEFTX:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analogL.X) return 1;                       
                         controllers[event.gdevice.which].state.analogL.X = applyAnalogDeadZone_(event.gaxis.value);
                         if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
-                            controllers[event.gdevice.which].state.analogL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp;
+                            controllers[event.gdevice.which].state.analogL.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp);
                             controllers[event.gdevice.which].state.analogL.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFTY:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analogL.Y) return 1; 
                         controllers[event.gdevice.which].state.analogL.Y = applyAnalogDeadZone_(event.gaxis.value);
                         if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
-                            controllers[event.gdevice.which].state.analogL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp;
+                            controllers[event.gdevice.which].state.analogL.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analogL.event_timestamp);
                             controllers[event.gdevice.which].state.analogL.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTX:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analogR.X) return 1; 
                         controllers[event.gdevice.which].state.analogR.X = applyAnalogDeadZone_(event.gaxis.value);
                         if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
-                            controllers[event.gdevice.which].state.analogR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp;
+                            controllers[event.gdevice.which].state.analogR.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp);
                             controllers[event.gdevice.which].state.analogR.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTY:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analogR.Y) return 1; 
                         controllers[event.gdevice.which].state.analogR.Y = applyAnalogDeadZone_(event.gaxis.value);
                         if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
-                            controllers[event.gdevice.which].state.analogR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp;
+                            controllers[event.gdevice.which].state.analogR.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analogR.event_timestamp);
                             controllers[event.gdevice.which].state.analogR.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.triggerL.value) return 1; 
                         controllers[event.gdevice.which].state.triggerL.value = event.gaxis.value;
                         if ( isSensorChanged_(event.gdevice.which, "trigger", "l") ) {
-                            controllers[event.gdevice.which].state.triggerL.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerL.event_timestamp;
+                            controllers[event.gdevice.which].state.triggerL.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerL.event_timestamp);
                             controllers[event.gdevice.which].state.triggerL.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
+                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.triggerR.value) return 1;
                         controllers[event.gdevice.which].state.triggerR.value = event.gaxis.value;
                         if ( isSensorChanged_(event.gdevice.which, "trigger", "r") ) {
-                            controllers[event.gdevice.which].state.triggerR.event_duration = event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerR.event_timestamp;
+                            controllers[event.gdevice.which].state.triggerR.event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.triggerR.event_timestamp);
                             controllers[event.gdevice.which].state.triggerR.event_timestamp = event.gaxis.timestamp;
                         }
                         break;
@@ -340,18 +346,19 @@ namespace puara_controller {
 
     void pullControllerEventThread() {
         SDL_Event sdlEvent;
-        while (keep_running) {
+        while (keep_running.load()) {
             if (SDL_PollEvent( &sdlEvent ) != 0) {
-                pullSDLEvent(sdlEvent);
-                std::lock_guard<std::mutex> lock(controller_event_mutex);
-                controller_event.notify_all();
+                if (!pullSDLEvent(sdlEvent)) {
+                    std::lock_guard<std::mutex> lock(controller_event_mutex);
+                    controller_event.notify_all();
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(polling_interval));
         }
     }
 
     void printEventThread() {
-        while (keep_running) {
+        while (keep_running.load()) {
             std::unique_lock<std::mutex> lock(controller_event_mutex);
             controller_event.wait(lock);
             printEvent(print_motion_data);
@@ -370,7 +377,7 @@ namespace puara_controller {
         SDL_Quit();
         keep_running.store(false);
         joiner.join();
-        joiner.join();
+        //joiner.join();
     }
 
     template<typename T>
@@ -467,5 +474,9 @@ namespace puara_controller {
 
     double mapRange(double in, double inMin, double inMax, double outMin, double outMax) {
         return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    }
+
+    int nano2mili(Uint64 ns) {
+        return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(ns)).count());
     }
 }

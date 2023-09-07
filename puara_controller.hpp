@@ -19,6 +19,8 @@
 #include <vector>
 #include <unordered_map>
 #include <cmath>
+#include <cstdint>
+#include <chrono>
 
 
 namespace puara_controller {
@@ -81,27 +83,27 @@ namespace puara_controller {
     struct Button {
         int value = 0; 
         int event_duration = 0; 
-        long int event_timestamp = 0;
+        Uint64 event_timestamp = 0;
     };
     struct Trigger {
         bool state = false; 
         int value = 0; 
         int event_duration = 0; 
-        long int event_timestamp = 0;
+        Uint64 event_timestamp = 0;
     };
     struct Sensor {
         float X = 0.0;
         float Y = 0.0;
         float Z = 0.0;
         int event_duration = 0; 
-        long int event_timestamp = 0;
+        Uint64 event_timestamp = 0;
     };
     struct Axis {
         bool state = false; 
         int X = 0; 
         int Y = 0; 
         int event_duration = 0; 
-        long int event_timestamp = 0;
+        Uint64 event_timestamp = 0;
     };
     struct Touch {
         int action = 0;
@@ -111,7 +113,7 @@ namespace puara_controller {
         float Y = 0.0;
         float pressure = 0.0;
         int event_duration = 0; 
-        long int event_timestamp = 0;
+        Uint64 event_timestamp = 0;
     };
     struct MultiTouch {
         int touchId = 0;
@@ -150,6 +152,7 @@ namespace puara_controller {
     extern std::int32_t elapsed_time_;
     float clip_(float n, float lower, float upper);
     int clip_(int n, int lower, int upper);
+    int nano2mili(Uint64 ns);
     double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
     int applyAnalogDeadZone_(int in);
     bool isSensorChanged_(int joy_index, std::string sensor, std::string side);

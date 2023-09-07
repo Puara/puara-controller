@@ -554,14 +554,21 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
     return 0;
 }
 
-void sendOSCTread() {
-    while (puara_controller::keep_running) {
+void sendOSCThread() {
+    while (puara_controller::keep_running.load()) {
         std::unique_lock<std::mutex> lock(puara_controller::controller_event_mutex);
         puara_controller::controller_event.wait(lock);
         sendOSC(puara_controller::currentEvent);
         if (custom_mappings.find(puara_controller::currentEvent.eventName) != custom_mappings.end()) {
             sendCustomOSC(puara_controller::currentEvent);
         }
+    }
+}
+
+void quitThreads() {
+    puara_controller::controller_event.notify_all();
+    for (auto& thread : threads) {
+        thread.join();
     }
 }
 
@@ -616,7 +623,7 @@ int main(int argc, char* argv[]) {
     puara_controller::verbose = verbose;
     puara_controller::enableMotion = !disable_motion;
 
-    threads.emplace_back(sendOSCTread);
+    threads.emplace_back(sendOSCThread);
 
     {
         std::unique_lock<std::mutex> lock(mtx);
@@ -624,10 +631,7 @@ int main(int argc, char* argv[]) {
     }
 
     puara_controller::quit();
-
-    for (auto& thread : threads) {
-        thread.join();
-    }
-
+    quitThreads();
+    
     return 0;
 }
