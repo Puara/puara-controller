@@ -549,7 +549,10 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
             }
             break;
     }
-    custom_osc_sender.send(custom_mappings[puaraEvent.eventName].forward_namespace, msg);
+    custom_osc_sender.send(
+        puara_controller::replaceID(custom_mappings[puaraEvent.eventName].forward_namespace, puara_controller::controllers[puaraEvent.controller].id), 
+        msg
+    );
 
     return 0;
 }

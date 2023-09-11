@@ -13,6 +13,7 @@
 
 #include "SDL.h"
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <atomic>
 #include <condition_variable>
@@ -98,7 +99,7 @@ namespace puara_controller {
         int event_duration = 0; 
         Uint64 event_timestamp = 0;
     };
-    struct Axis {
+    struct Analog {
         bool state = false; 
         int X = 0; 
         int Y = 0; 
@@ -115,21 +116,16 @@ namespace puara_controller {
         int event_duration = 0; 
         Uint64 event_timestamp = 0;
     };
-    struct MultiTouch {
-        int touchId = 0;
-        float dTheta = 0.0;
-        float dDist = 0.0;
-        float X = 0.0;
-        float Y = 0.0;
-        int numFingers = 0;
-    };
     struct ControllerState {
         std::unordered_map<int, Button> button;
-        Sensor accel, gyro;
-        Axis analogR, analogL;
-        Trigger triggerL, triggerR;
-        Touch touch;
-        MultiTouch multitouch;
+        std::unordered_map<int, Sensor> motion;
+        std::unordered_map<int, Analog> analog;
+        std::unordered_map<int, Trigger> trigger;
+        std::unordered_map<int, Touch> touch;
+        // Sensor accel, gyro;
+        // Axis analogR, analogL;
+        // Trigger triggerL, triggerR;
+        // Touch touch;
         bool rumble;
     };
 
@@ -153,6 +149,7 @@ namespace puara_controller {
     float clip_(float n, float lower, float upper);
     int clip_(int n, int lower, int upper);
     int nano2mili(Uint64 ns);
+    std::string replaceID(std::string str, int newID);
     double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
     int applyAnalogDeadZone_(int in);
     bool isSensorChanged_(int joy_index, std::string sensor, std::string side);

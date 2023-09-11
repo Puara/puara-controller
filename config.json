@@ -16,7 +16,7 @@
         {
             "internal_address": "A",
             "controller_id": 1,
-            "forward_namespace": "/button",
+            "forward_namespace": "/<ID>/button",
             "forward_arguments": ["value", "timestamp"],
             "range": {"min": 0, "max": 1}
         },
