@@ -25,7 +25,6 @@
 
 #include <cmath>
 
-int polling_interval = 2; // milliseconds
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
@@ -80,7 +79,7 @@ int readJson(std::string jsonFileName) {
     //Json::Value mappings = root["mappings"];
     jsonFile >> root;
     // Reading config
-    polling_interval = root["config"]["polling_interval"].asInt();
+    puara_controller::polling_frequency = root["config"]["polling_frequency"].asInt();
     puara_controller::enableMotion = !root["config"]["disable_motion"].asBool();
     puara_controller::verbose = root["config"]["verbose"].asBool();
     puara_controller::print_events = root["config"]["print_events"].asBool();

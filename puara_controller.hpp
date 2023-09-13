@@ -57,7 +57,7 @@ namespace puara_controller {
     extern int move_buffer_size;
     extern int analogDeadZone;
     extern bool enableMotion;
-    extern int polling_interval;
+    extern int polling_frequency;
     extern bool print_events;
     extern bool print_motion_data;
 
@@ -123,21 +123,16 @@ namespace puara_controller {
         std::unordered_map<int, Analog> analog;
         std::unordered_map<int, Trigger> trigger;
         std::unordered_map<int, Touch> touch;
-        // Sensor accel, gyro;
-        // Axis analogR, analogL;
-        // Trigger triggerL, triggerR;
-        // Touch touch;
         bool rumble;
     };
 
     class Controller {
         public:
             Controller() = default;
-            explicit Controller(int move_buffer_size) : discrete_buffer(move_buffer_size) {};
             Controller(int id, SDL_Gamepad* instance, int move_buffer_size);
             ControllerState state;
             CircularBuffer<ControllerState> discrete_buffer;
-            bool is_open = false;
+            bool is_open;
             int id;
             SDL_Gamepad* instance;
             

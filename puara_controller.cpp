@@ -18,7 +18,7 @@ namespace puara_controller {
     int move_buffer_size = 10;
     int analogDeadZone = 1024;
     bool enableMotion = true;
-    int polling_interval = 2; // milliseconds
+    int polling_frequency = 100; // hertz
     bool print_events = false;
     bool print_motion_data = false;
 
@@ -100,7 +100,6 @@ namespace puara_controller {
         }
         threads.emplace_back(pullControllerEventThread);
         if (print_events) {
-            std::cout << "foi start" << std::endl;
             threads.emplace_back(printEventThread);
         }
         joiner = std::thread(joinAllThreads, std::ref(threads));
@@ -120,13 +119,13 @@ namespace puara_controller {
 
     int openController(int joy_index) {
         if (SDL_IsGamepad(joy_index)) {
-            std::cout << "New game controller found. Opening...\n" << std::endl;
-            Controller controller_instance(joy_index, SDL_OpenGamepad(joy_index), move_buffer_size);
-            controllers.insert({joy_index, controller_instance});
-            if (controllers[joy_index].is_open) {
-                std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index) 
-                        << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
-            }
+            std::cout << "New game controller found. Opening..." << std::endl;
+            controllers.emplace(joy_index, Controller());
+            controllers[joy_index].id = joy_index;
+            controllers[joy_index].instance = SDL_OpenGamepad(joy_index);
+            controllers[joy_index].is_open = true;
+            std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index) 
+                      << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
             if (enableMotion) {
                 if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
                     if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
@@ -265,7 +264,6 @@ namespace puara_controller {
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].pressure = event.gtouchpad.pressure;
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
-                std::cout << "foi sensor" << std::endl;
                 if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
                     controllers[event.gdevice.which].state.motion[SDL_SENSOR_ACCEL].X = event.gsensor.data[0];
                     controllers[event.gdevice.which].state.motion[SDL_SENSOR_ACCEL].Y = event.gsensor.data[1];
@@ -357,7 +355,7 @@ namespace puara_controller {
                     controller_event.notify_all();
                 }
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(polling_interval));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000/polling_frequency));
         }
     }
 
@@ -421,7 +419,7 @@ namespace puara_controller {
     }
 
     Controller::Controller(int id, SDL_Gamepad* instance, int move_buffer_size) 
-        : id(id), instance(instance), discrete_buffer(move_buffer_size) {
+        : id(id), instance(instance), discrete_buffer(move_buffer_size), is_open(true) {          
             for (auto const& i: SDL2Name["button"]) {
                 state.button.emplace(i.first, Button());
             }
@@ -438,7 +436,6 @@ namespace puara_controller {
                     state.touch.emplace(i,Touch());
                 }
             }
-            is_open = true;
     }
 
     bool isSensorChanged_(int joy_index, std::string sensor, std::string side) {
