@@ -99,8 +99,10 @@ namespace puara_controller {
             if (verbose) std::cout << "SDL initialized successfully" << std::endl;
         }
         threads.emplace_back(pullControllerEventThread);
-        if (print_events)
+        if (print_events) {
+            std::cout << "foi start" << std::endl;
             threads.emplace_back(printEventThread);
+        }
         joiner = std::thread(joinAllThreads, std::ref(threads));
         std::cout << "Puara Controller started successfully" << std::endl;
         return 0;
@@ -177,6 +179,7 @@ namespace puara_controller {
         currentEvent.controller = event.gdevice.which;
         currentEvent.eventType = event.type;
         currentEvent.eventAction = 0;
+        currentEvent.touchID = -1;
 
         if (event.type == SDL_EVENT_QUIT) {
             quit();
@@ -252,6 +255,7 @@ namespace puara_controller {
                 break;
             case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
                 currentEvent.eventAction = 0;
+                currentEvent.touchID = event.gtouchpad.touchpad;
                 currentEvent.eventName = SDL2Name["touch"][currentEvent.eventAction];
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].action = event.gtouchpad.type;
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].touchpad = event.gtouchpad.touchpad;
@@ -261,6 +265,7 @@ namespace puara_controller {
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].pressure = event.gtouchpad.pressure;
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
+                std::cout << "foi sensor" << std::endl;
                 if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
                     controllers[event.gdevice.which].state.motion[SDL_SENSOR_ACCEL].X = event.gsensor.data[0];
                     controllers[event.gdevice.which].state.motion[SDL_SENSOR_ACCEL].Y = event.gsensor.data[1];
@@ -314,25 +319,25 @@ namespace puara_controller {
                 break;
             case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
                 std::cout << "Event on controller " << currentEvent.controller << ": ";
-                    std::cout << " Touchpad " << controllers[currentEvent.controller].state.touch[currentEvent.].touchpad << ":"
-                        << " finger: " << controllers[currentEvent.controller].state.touch.finger
-                        << "  X: " << controllers[currentEvent.controller].state.touch.X
-                        << "  Y: " << controllers[currentEvent.controller].state.touch.Y
-                        << " pressure: " << controllers[currentEvent.controller].state.touch.pressure
+                    std::cout << " Touchpad " << currentEvent.touchID << ":"
+                        << " finger: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].finger
+                        << "  X: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].X
+                        << "  Y: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].Y
+                        << " pressure: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].pressure
                         << std::endl;
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                 if (printSensor) {
                     std::cout << "Event on controller " << currentEvent.controller
-                            << ": " << SDL2Name[SDL2Name["events"][currentEvent.eventType]][currentEvent.eventAction];
+                              << ": " << SDL2Name[SDL2Name["events"][currentEvent.eventType]][currentEvent.eventAction];
                     if (currentEvent.eventAction == SDL_SENSOR_ACCEL) {
-                        std::cout << " " << controllers[currentEvent.controller].state.accel.X
-                                << " " << controllers[currentEvent.controller].state.accel.Y 
-                                << " " << controllers[currentEvent.controller].state.accel.Z << std::endl;
+                        std::cout << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_ACCEL].X
+                                  << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y 
+                                  << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z << std::endl;
                     } else if (currentEvent.eventAction == SDL_SENSOR_GYRO) {
-                        std::cout << " " << controllers[currentEvent.controller].state.gyro.X
-                                << " " << controllers[currentEvent.controller].state.gyro.Y 
-                                << " " << controllers[currentEvent.controller].state.gyro.Z << std::endl;
+                        std::cout << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_GYRO].X
+                                  << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_GYRO].Y 
+                                  << " " << controllers[currentEvent.controller].state.motion[SDL_SENSOR_GYRO].Z << std::endl;
                     }
                 }
                 break;
@@ -375,8 +380,8 @@ namespace puara_controller {
     void quit(){
         SDL_Quit();
         keep_running.store(false);
+        controller_event.notify_all();
         joiner.join();
-        //joiner.join();
     }
 
     template<typename T>
@@ -441,35 +446,35 @@ namespace puara_controller {
         bool answer;
         if (sensor == "trigger") {
             if (side == "l") {
-                if (controllers[joy_index].state.triggerL.value != 0) {
+                if (controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value != 0) {
                     convertedValue = true;
                 }
-                answer = convertedValue != controllers[joy_index].state.triggerL.state;
+                answer = convertedValue != controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state;
                 if (answer)
-                    controllers[joy_index].state.triggerL.state = !controllers[joy_index].state.triggerL.state;
+                    controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state = !controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state;
             } else if (side == "r") {
-                if (controllers[joy_index].state.triggerR.value != 0) {
+                if (controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value != 0) {
                     convertedValue = true;
                 }
-                answer = convertedValue != controllers[joy_index].state.triggerR.state;
+                answer = convertedValue != controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state;
                 if (answer)
-                    controllers[joy_index].state.triggerR.state = !controllers[joy_index].state.triggerR.state;
+                    controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state = !controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state;
             }
         } else if (sensor == "analog") {
             if (side == "l") {
-                if (controllers[joy_index].state.analogL.X != 0 || controllers[joy_index].state.analogL.Y !=0) {
+                if (controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X != 0 || controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y !=0) {
                     convertedValue = true;
                 }
-                answer = convertedValue != controllers[joy_index].state.analogL.state;
+                answer = convertedValue != controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state;
                 if (answer)
-                    controllers[joy_index].state.analogL.state = !controllers[joy_index].state.analogL.state;
+                    controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state = !controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state;
             } else if (side == "r") {
-                if (controllers[joy_index].state.analogR.X != 0 || controllers[joy_index].state.analogR.Y !=0) {
+                if (controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X != 0 || controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y !=0) {
                     convertedValue = true;
                 }
-                answer = convertedValue != controllers[joy_index].state.analogR.state;
+                answer = convertedValue != controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state;
                 if (answer)
-                    controllers[joy_index].state.analogR.state = !controllers[joy_index].state.analogR.state;
+                    controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state = !controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state;
             }
         } 
         return answer; 

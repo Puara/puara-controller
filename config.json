@@ -1,10 +1,10 @@
 {
     "config": {
         "polling_interval": 2,
-        "disable_motion": true,
-        "verbose": false,
-        "print_events": false,
-        "print_motion_data": false,
+        "disable_motion": false,
+        "verbose": true,
+        "print_events": true,
+        "print_motion_data": true,
         "osc_namespace": "puaracontroller",
         "osc_server_port": 9000,
         "osc_client_address": "localhost",

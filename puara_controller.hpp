@@ -30,6 +30,7 @@ namespace puara_controller {
         unsigned int controller; 
         unsigned int eventType; 
         int eventAction; 
+        int touchID;
         std::string eventName;
     };
 

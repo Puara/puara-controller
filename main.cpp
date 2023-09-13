@@ -26,13 +26,9 @@
 #include <cmath>
 
 int polling_interval = 2; // milliseconds
-bool verbose = false;
-bool print_events = false;
-bool print_motion_data = false;
 int osc_server_port = 9000;
 std::string osc_client_address = "localhost";
 int osc_client_port = 9001;
-bool disable_motion = false;
 std::string forward_address;
 int forward_port;
 
@@ -85,10 +81,10 @@ int readJson(std::string jsonFileName) {
     jsonFile >> root;
     // Reading config
     polling_interval = root["config"]["polling_interval"].asInt();
-    disable_motion = root["config"]["disable_motion"].asBool();
-    verbose = root["config"]["verbose"].asBool();
-    print_events = root["config"]["print_events"].asBool();
-    print_motion_data = root["config"]["print_motion_data"].asBool();
+    puara_controller::enableMotion = !root["config"]["disable_motion"].asBool();
+    puara_controller::verbose = root["config"]["verbose"].asBool();
+    puara_controller::print_events = root["config"]["print_events"].asBool();
+    puara_controller::print_motion_data = root["config"]["print_motion_data"].asBool();
     puara_controller::identifier = root["config"]["osc_namespace"].asString();
     osc_server_port = root["config"]["osc_server_port"].asInt();
     osc_client_address = root["config"]["osc_client_address"].asString();
@@ -141,6 +137,10 @@ void killlHandler(int signum) {
     std::cout << "\nClosing Puara Controller..." << std::endl;
     puara_controller::keep_running.store(false);
     cv.notify_all();
+    puara_controller::controller_event.notify_all();
+    for (auto& thread : threads) {
+        thread.join();
+    }
 }
 
 int libloServerMethods(){
@@ -151,13 +151,13 @@ int libloServerMethods(){
             float low_freq = argv[2]->f;
             float hi_freq = argv[3]->f;
             puara_controller::rumble(id, time, low_freq, hi_freq);
-            if (verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
+            if (puara_controller::verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
         });
     osc_server.add_method("/puaracontroller/rumble", "i",
         [&](lo_arg **argv, int) {
             int id = argv[0]->i;
             puara_controller::rumble(id, 65535, 65535, 1000);
-            if (verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
+            if (puara_controller::verbose) std::cout << "Controller " << id << " rumble!" << std::endl;
         });
         return 0;
 }
@@ -177,40 +177,40 @@ int sendOSC(puara_controller::ControllerEvent puaraEvent) {
         case SDL_EVENT_GAMEPAD_AXIS_MOTION:
             switch (puaraEvent.eventAction) {
                 case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.event_duration);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration);
                     break;
                 case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.event_duration);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration);
                     break;
                 case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerL.value);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerL.event_duration);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration);
                     break;
                 case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerR.value);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerR.event_duration);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration);
                     break;
             }
             break;
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.touchpad);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.finger);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.X);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.Y);
+            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].touchpad);
+            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].finger);
+            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].X);
+            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].Y);
             break;
         case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
             if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.Z);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].X);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z);
                 } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.Z);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].X);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Y);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Z);
                 }
             break;
     }
@@ -297,25 +297,25 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                         if (argument == "X") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.analogL.X,
+                                    puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X,
                                     -32768, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.X);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X);
                             };
                         } else if (argument == "Y") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.analogL.Y,
+                                    puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y,
                                     -32768, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.Y);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y);
                             };
                         } else if (argument == "azimuth") {
                             msg.add(calculateAngle(
-                                puara_controller::controllers[puaraEvent.controller].state.analogL.X,
-                                puara_controller::controllers[puaraEvent.controller].state.analogL.Y));
+                                puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X,
+                                puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y));
                         } else if (argument == "timestamp") {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.analogL.event_duration);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration);
                         } else {
                             switch (getType(argument)) {
                                 case ArgumentType::Integer:
@@ -336,25 +336,25 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                         if (argument == "X") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.analogR.X,
+                                    puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X,
                                     -32768, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.X);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X);
                             };
                         } else if (argument == "Y") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.analogR.Y,
+                                    puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y,
                                     -32768, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.Y);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y);
                             };
                         } else if (argument == "azimuth") {
                             msg.add(calculateAngle(
-                                puara_controller::controllers[puaraEvent.controller].state.analogR.X,
-                                puara_controller::controllers[puaraEvent.controller].state.analogR.Y));
+                                puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X,
+                                puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y));
                         } else if (argument == "timestamp") {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.analogR.event_duration);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration);
                         } else {
                             switch (getType(argument)) {
                                 case ArgumentType::Integer:
@@ -375,13 +375,13 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                         if (argument == "value") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.triggerL.value,
+                                    puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value,
                                     0, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerL.value);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value);
                             };
                         } else if (argument == "timestamp") {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerL.event_duration);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration);
                         } else {
                             switch (getType(argument)) {
                                 case ArgumentType::Integer:
@@ -402,13 +402,13 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                         if (argument == "value") {
                             if (min_range != max_range) {
                                 msg.add(puara_controller::mapRange(
-                                    puara_controller::controllers[puaraEvent.controller].state.triggerR.value,
+                                    puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value,
                                     0, 32768, min_range, max_range));
                             } else {
-                                msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerR.value);
+                                msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value);
                             };
                         } else if (argument == "timestamp") {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.triggerR.event_duration);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration);
                         } else {
                             switch (getType(argument)) {
                                 case ArgumentType::Integer:
@@ -429,27 +429,27 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
             for (auto& argument : custom_mappings[puaraEvent.eventName].forward_arguments) {
                 if (argument == "touchId") {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.touchpad);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].touchpad);
                 } else if (argument == "fingerId") {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.finger);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].finger);
                 } else if (argument == "X") {
                     if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.touch.X,
+                                puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].X,
                                 0.0f, 1.0f, min_range, max_range));
                     } else {
-                        msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.X);
+                        msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].X);
                     };
                 } else if (argument == "Y") {
                     if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.touch.Y,
+                                puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].Y,
                                 0.0f, 1.0f, min_range, max_range));
                     } else {
-                        msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.Y);
+                        msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].Y);
                     };
                 } else if (argument == "pressure") {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch.pressure);
+                    msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].pressure);
                 } else {
                     switch (getType(argument)) {
                         case ArgumentType::Integer:
@@ -471,26 +471,26 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                     if (argument == "X") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.accel.X,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].X,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.X);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].X);
                         };
                     } else if (argument == "Y") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.accel.Y,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.Y);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y);
                         };
                     } else if (argument == "Z") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.accel.Z,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.accel.Z);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z);
                         };
                     } else {
                         switch (getType(argument)) {
@@ -511,26 +511,26 @@ int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
                     if (argument == "X") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.gyro.X,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].X,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.X);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].X);
                         };
                     } else if (argument == "Y") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.gyro.Y,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Y,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.Y);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Y);
                         };
                     } else if (argument == "Z") {
                         if (min_range != max_range) {
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[puaraEvent.controller].state.gyro.Z,
+                                puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Z,
                                 -40.0f, 40.0f, min_range, max_range));
                         } else {
-                            msg.add(puara_controller::controllers[puaraEvent.controller].state.gyro.Z);
+                            msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Z);
                         };
                     } else {
                         switch (getType(argument)) {
@@ -568,13 +568,6 @@ void sendOSCThread() {
     }
 }
 
-void quitThreads() {
-    puara_controller::controller_event.notify_all();
-    for (auto& thread : threads) {
-        thread.join();
-    }
-}
-
 int main(int argc, char* argv[]) {
 
     std::cout << "Puara Controller standalone - Connect with game controllers using SDL3\n"
@@ -606,13 +599,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if ( puara_controller::start() ) {
-        exit(EXIT_FAILURE);
-    }
-
     std::signal(SIGINT, killlHandler);
 
     if (useConfig) readJson(jsonFileName);
+
+    if ( puara_controller::start() ) {
+        exit(EXIT_FAILURE);
+    }
 
     libloServerMethods();
 
@@ -623,9 +616,6 @@ int main(int argc, char* argv[]) {
         osc_server.start();
     }
 
-    puara_controller::verbose = verbose;
-    puara_controller::enableMotion = !disable_motion;
-
     threads.emplace_back(sendOSCThread);
 
     {
@@ -634,7 +624,6 @@ int main(int argc, char* argv[]) {
     }
 
     puara_controller::quit();
-    quitThreads();
     
     return 0;
 }
