@@ -170,7 +170,7 @@ namespace puara_controller {
         return mappedValue;
     }
 
-    int applyAnalogDeadZone_(int in) {
+    int applyAnalogDeadZone(int in) {
         return applyDeadZone_(static_cast<double>(in), -32768.0, 32768.0, -32768.0, 32768.0, static_cast<double>(analogDeadZone*-1), static_cast<double>(analogDeadZone), 0.0);
     }
 
@@ -201,49 +201,49 @@ namespace puara_controller {
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                 switch (event.gaxis.axis) {
                     case SDL_GAMEPAD_AXIS_LEFTX:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X) return 1;                       
-                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X = applyAnalogDeadZone_(event.gaxis.value);
-                        if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp);
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp = event.gaxis.timestamp;
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X) return 1;                       
+                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].X = applyAnalogDeadZone(event.gaxis.value);
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp);
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFTY:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y) return 1; 
-                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y = applyAnalogDeadZone_(event.gaxis.value);
-                        if ( isSensorChanged_(event.gdevice.which, "analog", "l") ) {
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp);
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp = event.gaxis.timestamp;
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y) return 1; 
+                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].Y = applyAnalogDeadZone(event.gaxis.value);
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp);
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_timestamp = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_LEFTY].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTX:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X) return 1; 
-                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X = applyAnalogDeadZone_(event.gaxis.value);
-                        if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp);
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp = event.gaxis.timestamp;
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X) return 1; 
+                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].X = applyAnalogDeadZone(event.gaxis.value);
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp);
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTY:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y) return 1; 
-                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y = applyAnalogDeadZone_(event.gaxis.value);
-                        if ( isSensorChanged_(event.gdevice.which, "analog", "r") ) {
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp);
-                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp = event.gaxis.timestamp;
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y) return 1; 
+                        controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].Y = applyAnalogDeadZone(event.gaxis.value);
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp);
+                            controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_timestamp = controllers[event.gdevice.which].state.analog[SDL_GAMEPAD_AXIS_RIGHTY].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value) return 1; 
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value) return 1; 
                         controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value = event.gaxis.value;
-                        if ( isSensorChanged_(event.gdevice.which, "trigger", "l") ) {
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "trigger") ) {
                             controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_timestamp);
                             controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-                        if (applyAnalogDeadZone_(event.gaxis.value) == controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value) return 1;
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value) return 1;
                         controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value = event.gaxis.value;
-                        if ( isSensorChanged_(event.gdevice.which, "trigger", "r") ) {
+                        if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "trigger") ) {
                             controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_timestamp);
                             controllers[event.gdevice.which].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_timestamp = event.gaxis.timestamp;
                         }
@@ -262,6 +262,12 @@ namespace puara_controller {
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].X = event.gtouchpad.x;
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].Y = event.gtouchpad.y;
                 controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].pressure = event.gtouchpad.pressure;
+                if ( isSensorChanged(event.gdevice.which, event.gtouchpad.touchpad, "touch") ) {
+                    controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].event_duration = nano2mili(event.gtouchpad.timestamp - controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].event_timestamp);
+                    controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].event_timestamp = event.gtouchpad.timestamp;
+                }
+                controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].last_X = event.gtouchpad.x;
+                controllers[event.gdevice.which].state.touch[event.gtouchpad.touchpad].last_Y = event.gtouchpad.y;
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                 if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
@@ -290,7 +296,8 @@ namespace puara_controller {
                 std::cout << "Event on controller " << currentEvent.controller
                         << ": " << SDL2Name[SDL2Name["events"][currentEvent.eventType]][currentEvent.eventAction]
                         << " " << controllers[currentEvent.controller].state.button[currentEvent.eventAction].value
-                        << " " << controllers[currentEvent.controller].state.button[currentEvent.eventAction].event_duration << std::endl;
+                        << " (duration: " << controllers[currentEvent.controller].state.button[currentEvent.eventAction].event_duration 
+                        << ")" << std::endl;
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                 std::cout << "Event on controller " << currentEvent.controller << ": ";
@@ -298,20 +305,24 @@ namespace puara_controller {
                     case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
                         std::cout << " Analog_left " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X << " "
                                 << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y
-                                << " " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration << std::endl;
+                                << " (duration: " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration
+                                << ")" << std::endl;
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
                         std::cout << " Analog_right " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X << " "
                                 << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y
-                                << " " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration << std::endl;
+                                << " (duration: " << controllers[currentEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration
+                                << ")" << std::endl;
                         break;
                     case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
                         std::cout << " trigger_left " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value
-                                << " " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration << std::endl;
+                                << " (duration: " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration
+                                << ")" << std::endl;
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
                         std::cout << " trigger_right " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value
-                                << " " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration << std::endl;
+                                << " (duration: " << controllers[currentEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration
+                                << ")" << std::endl;
                         break;
                 }
                 break;
@@ -322,6 +333,7 @@ namespace puara_controller {
                         << "  X: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].X
                         << "  Y: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].Y
                         << " pressure: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].pressure
+                        << " duration: " << controllers[currentEvent.controller].state.touch[currentEvent.touchID].event_duration
                         << std::endl;
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
@@ -427,7 +439,9 @@ namespace puara_controller {
                 state.motion.emplace(i.first, Sensor());
             }
             state.analog.emplace(SDL_GAMEPAD_AXIS_LEFTX, Analog());
+            state.analog.emplace(SDL_GAMEPAD_AXIS_LEFTY, Analog());
             state.analog.emplace(SDL_GAMEPAD_AXIS_RIGHTX, Analog());
+            state.analog.emplace(SDL_GAMEPAD_AXIS_RIGHTY, Analog());
             state.trigger.emplace(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, Trigger());
             state.trigger.emplace(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, Trigger());
             //touch
@@ -438,55 +452,50 @@ namespace puara_controller {
             }
     }
 
-    bool isSensorChanged_(int joy_index, std::string sensor, std::string side) {
+    bool isSensorChanged(int joy_index, int axis, std::string sensor) {
         bool convertedValue = false;
         bool answer;
         if (sensor == "trigger") {
-            if (side == "l") {
-                if (controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value != 0) {
-                    convertedValue = true;
-                }
-                answer = convertedValue != controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state;
-                if (answer)
-                    controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state = !controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].state;
-            } else if (side == "r") {
-                if (controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value != 0) {
-                    convertedValue = true;
-                }
-                answer = convertedValue != controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state;
-                if (answer)
-                    controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state = !controllers[joy_index].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].state;
-            }
+            if (controllers[joy_index].state.trigger[axis].value != 0) {convertedValue = true;}
+            answer = convertedValue != controllers[joy_index].state.trigger[axis].state;
+            if (answer) {controllers[joy_index].state.trigger[axis].state = !controllers[joy_index].state.trigger[axis].state;}
         } else if (sensor == "analog") {
-            if (side == "l") {
-                if (controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X != 0 || controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y !=0) {
+            if (controllers[joy_index].state.analog[axis].X != 0 || controllers[joy_index].state.analog[axis].Y !=0) {convertedValue = true;}
+            answer = convertedValue != controllers[joy_index].state.analog[axis].state;
+            if (answer) {controllers[joy_index].state.analog[axis].state = !controllers[joy_index].state.analog[axis].state;}
+        } else if (sensor == "touch") {
+            if (controllers[joy_index].state.touch[axis].X != controllers[joy_index].state.touch[axis].last_X || 
+                controllers[joy_index].state.touch[axis].Y != controllers[joy_index].state.touch[axis].last_Y) {
                     convertedValue = true;
-                }
-                answer = convertedValue != controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state;
-                if (answer)
-                    controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state = !controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_LEFTX].state;
-            } else if (side == "r") {
-                if (controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X != 0 || controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y !=0) {
-                    convertedValue = true;
-                }
-                answer = convertedValue != controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state;
-                if (answer)
-                    controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state = !controllers[joy_index].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].state;
             }
-        } 
+            answer = convertedValue != controllers[joy_index].state.touch[axis].state;
+            if (answer) {controllers[joy_index].state.touch[axis].state = !controllers[joy_index].state.touch[axis].state;}
+        }
         return answer; 
     }
 
     float mapRange(float in, float inMin, float inMax, float outMin, float outMax) {
-        return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        if (outMin != outMax) {
+            return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        } else {
+            return in;
+        }
     }
 
     int mapRange(int in, int inMin, int inMax, float outMin, float outMax) {
-        return round((in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+        if (outMin != outMax) {
+            return round((in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+        } else {
+            return in;
+        }
     }
 
     double mapRange(double in, double inMin, double inMax, double outMin, double outMax) {
-        return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        if (outMin != outMax) {
+            return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        } else {
+            return in;
+        }
     }
 
     int nano2mili(Uint64 ns) {

@@ -1,8 +1,9 @@
 {
     "config": {
         "polling_frequency": 1000,
-        "disable_motion": false,
-        "verbose": true,
+        "analog_dead_zone": 2000,
+        "disable_motion": true,
+        "verbose": false,
         "print_events": true,
         "print_motion_data": false,
         "osc_namespace": "puaracontroller",
@@ -11,6 +12,7 @@
         "osc_client_port": 9001,
         "forward_address": "localhost",
         "forward_port": 9002
+        
     },
     "forwarders": [
         {

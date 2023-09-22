@@ -108,11 +108,14 @@ namespace puara_controller {
         Uint64 event_timestamp = 0;
     };
     struct Touch {
+        bool state = false;
         int action = 0;
         int touchpad = 0;
         int finger = 0;
         float X = 0.0;
         float Y = 0.0;
+        float last_X = 0.0;
+        float last_Y = 0.0;
         float pressure = 0.0;
         int event_duration = 0; 
         Uint64 event_timestamp = 0;
@@ -147,8 +150,8 @@ namespace puara_controller {
     int nano2mili(Uint64 ns);
     std::string replaceID(std::string str, int newID);
     double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
-    int applyAnalogDeadZone_(int in);
-    bool isSensorChanged_(int joy_index, std::string sensor, std::string side);
+    int applyAnalogDeadZone(int in);
+    bool isSensorChanged(int joy_index, int axis, std::string sensor);
 };
 
 #endif
