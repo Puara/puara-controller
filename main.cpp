@@ -37,7 +37,14 @@ lo::ServerThread osc_server(osc_server_port);
 lo::Address osc_sender(osc_client_address, osc_client_port);
 std::vector<std::thread> threads;
 
+struct 
 struct Mapping {
+    int controller_id;
+    std::string osc_namespace;
+    std::vector<std::string>
+
+
+
     std::string internal_address;
     int controller_id;
     std::string forward_namespace;
@@ -91,8 +98,8 @@ int readJson(std::string jsonFileName) {
     if (!root["config"]["osc_client_port"].isNull()) osc_client_port = root["config"]["osc_client_port"].asInt();
     if (!root["config"]["forward_address"].isNull()) forward_address = root["config"]["forward_address"].asString();
     if (!root["config"]["forward_port"].isNull()) forward_port = root["config"]["forward_port"].asInt();
-    // Reading mappings
-    for (const Json::Value& mapInfo : root["forwarders"]) {
+    // Reading osc
+    for (const Json::Value& mapInfo : root["osc"]) {
         custom_mappings.emplace(
             mapInfo["internal_address"].asString(), 
             Mapping{

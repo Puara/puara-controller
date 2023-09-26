@@ -22,9 +22,9 @@
                 {"action": "A", "value": "state", "min": 0, "max": 1},
                 {"action": "A", "value": "duration"},
                 {"action": "A", "value": "timestamp"},
-                {"value": "custom_text"},
-                {"value": "1"},
-                {"value": "1.1"}
+                {"action": "text", "value": "custom_text"},
+                {"action": "int", "value": "1"},
+                {"action": "float", "value": "1.1"}
             ]
         },
         {
