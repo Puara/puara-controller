@@ -37,30 +37,67 @@ lo::ServerThread osc_server(osc_server_port);
 lo::Address osc_sender(osc_client_address, osc_client_port);
 std::vector<std::thread> threads;
 
-struct 
-struct Mapping {
+struct OSCMapping {
     int controller_id;
     std::string osc_namespace;
-    std::vector<std::string>
-
-
-
-    std::string internal_address;
-    int controller_id;
-    std::string forward_namespace;
-    std::string forward_port;
-    std::vector<std::string> forward_arguments;
-    float min_range, max_range;
+    struct OSCArguments {
+        std::string action;
+        std::string value;
+        float min;
+        float max;
+    };
+    std::vector<OSCArguments> arguments;
 };
-std::unordered_map<std::string, Mapping> custom_mappings;
+std::vector <OSCMapping> osc_mappings;
+std::unordered_map<std::string, std::vector<int>> osc_trigger;
 
-struct Midi {
+struct LibmapperMapping {
+    std::string direction;
+    std::string name;
+    struct LibmapperArguments {
+        std::string action;
+        std::string value;
+        float min;
+        float max;
+    };
+    std::vector<LibmapperArguments> arguments;
+};
+std::vector<LibmapperMapping> libmapper_mappings;
+std::unordered_map<std::string, std::vector<int>> libmapper_trigger;
+
+struct MidiMapping {
+    int controller_id;
     std::string type;
     int channel;
-    std::string note_value;
-    std::string velocity_controller;
+    struct MidiArguments {
+        std::string action;
+        std::string value;
+        float min;
+        float max;
+    };
+    MidiArguments key_controller;
+    MidiArguments velocity_value;
 };
-std::vector<Midi> puara_midi;
+std::vector<MidiMapping> midi_mappings;
+std::unordered_map<std::string, std::vector<int>> midi_trigger;
+
+// struct Mapping {
+//     std::string internal_address;
+//     int controller_id;
+//     std::string forward_namespace;
+//     std::string forward_port;
+//     std::vector<std::string> forward_arguments;
+//     float min_range, max_range;
+// };
+// std::unordered_map<std::string, Mapping> custom_mappings;
+
+// struct Midi {
+//     std::string type;
+//     int channel;
+//     std::string note_value;
+//     std::string velocity_controller;
+// };
+// std::vector<Midi> puara_midi;
 
 void printHelp(const char* programName) {
     std::cout << "Puara Controller standalone - Connect with game controllers using SDL3     \n"
@@ -71,7 +108,7 @@ void printHelp(const char* programName) {
               << "Edu Meneses (2023)                                                         \n"
               << "\nUsage: " << programName << " [options] <json_file>\n"
               << "Options:\n"
-              << "  -h,       Show help message\n"
+              << "  -h,       Show this help message\n"
               << "  -c,       Provide a JSON config file"
               << std::endl;
 }
@@ -99,42 +136,82 @@ int readJson(std::string jsonFileName) {
     if (!root["config"]["forward_address"].isNull()) forward_address = root["config"]["forward_address"].asString();
     if (!root["config"]["forward_port"].isNull()) forward_port = root["config"]["forward_port"].asInt();
     // Reading osc
-    for (const Json::Value& mapInfo : root["osc"]) {
-        custom_mappings.emplace(
-            mapInfo["internal_address"].asString(), 
-            Mapping{
-                .internal_address = mapInfo["internal_address"].asString(),
-                .controller_id = mapInfo["controller_id"].asInt(),
-                .forward_namespace = mapInfo["forward_namespace"].asString()
+    for (const Json::Value& mapOSC : root["osc"]) {
+        osc_mappings.emplace(osc_mappings.end(), 
+            OSCMapping{
+                .controller_id = (mapOSC["controller_id"].isNull()) ? -1 : mapOSC["controller_id"].asInt(),
+                .osc_namespace = (mapOSC["namespace"].isNull()) ? "puaracontroller" : mapOSC["namespace"].asString(),
             }
         );
-        if (!mapInfo["range"]["min"].isNull()) {
-            custom_mappings[mapInfo["internal_address"].asString()].min_range = mapInfo["range"]["min"].asFloat();
-        } else {
-            custom_mappings[mapInfo["internal_address"].asString()].min_range = 0;
-        }
-        if (!mapInfo["range"]["max"].isNull()) {
-            custom_mappings[mapInfo["internal_address"].asString()].max_range = mapInfo["range"]["max"].asFloat();
-        } else {
-            custom_mappings[mapInfo["internal_address"].asString()].max_range = 0;
-        }
-        if (mapInfo["forward_arguments"].isArray()) {
-            for (const Json::Value& element : mapInfo["forward_arguments"]) {
-                custom_mappings[mapInfo["internal_address"].asString()].forward_arguments.push_back(element.asString());
-            }
-        }
-    }
-    // Reading MIDI
-    for (const Json::Value& midiInfo : root["midi"]) {
-        puara_midi.emplace_back(
-            Midi{
-                .type = midiInfo["type"].asString() ,
-                .channel = midiInfo["channel"].asInt(),
-                .note_value = midiInfo["note_value"].asString() ,
-                .velocity_controller = midiInfo["velocity_controller"].asString() 
+        for (const Json::Value& argumentOSC : mapOSC["arguments"]) {
+            osc_mappings.back().arguments.emplace(
+                osc_mappings.back().arguments.end(),
+                OSCMapping::OSCArguments{
+                    .action = (argumentOSC["action"].isNull()) ? "text" : argumentOSC["action"].asString(),
+                    .value = (argumentOSC["value"].isNull()) ? "none" : argumentOSC["value"].asString(),
+                    .min = (argumentOSC["min"].isNull()) ? 0 : argumentOSC["min"].asFloat(),
+                    .max = (argumentOSC["max"].isNull()) ? 0 : argumentOSC["max"].asFloat(),
+                }
+            );
+            if (osc_trigger.find(osc_mappings.back().arguments.back().action) == osc_trigger.end()) {
+                osc_trigger.emplace(osc_mappings.back().arguments.back().action, std::vector<int>{static_cast<int>(osc_mappings.size())-1});
+            } else {
+                osc_trigger[osc_mappings.back().arguments.back().action].push_back(static_cast<int>(osc_mappings.size())-1);
+            };
+        };
+    };
+    // Reading libmapper
+    for (const Json::Value& mapLibmapper : root["libmapper"]) {
+        libmapper_mappings.emplace(libmapper_mappings.end(), 
+            LibmapperMapping{
+                .direction = (mapLibmapper["direction"].isNull()) ? "out" : mapLibmapper["direction"].asString(),
+                .name = (mapLibmapper["name"].isNull()) ? "puaracontroller" : mapLibmapper["name"].asString(),
             }
         );
-    }
+        for (const Json::Value& argumentLibmapper : mapLibmapper["arguments"]) {
+            libmapper_mappings.back().arguments.emplace(
+                libmapper_mappings.back().arguments.end(),
+                LibmapperMapping::LibmapperArguments{
+                    .action = (argumentLibmapper["action"].isNull()) ? "text" : argumentLibmapper["action"].asString(),
+                    .value = (argumentLibmapper["value"].isNull()) ? "none" : argumentLibmapper["value"].asString(),
+                    .min = (argumentLibmapper["min"].isNull()) ? 0 : argumentLibmapper["min"].asFloat(),
+                    .max = (argumentLibmapper["max"].isNull()) ? 0 : argumentLibmapper["max"].asFloat(),
+                }
+            );
+            if (libmapper_trigger.find(libmapper_mappings.back().arguments.back().action) == libmapper_trigger.end()) {
+                libmapper_trigger.emplace(libmapper_mappings.back().arguments.back().action, std::vector<int>{static_cast<int>(libmapper_mappings.size())-1});
+            } else {
+                libmapper_trigger[libmapper_mappings.back().arguments.back().action].push_back(static_cast<int>(libmapper_mappings.size())-1);
+            };
+        };
+    };
+    // Reading midi
+    for (const Json::Value& mapMidi : root["midi"]) {
+        midi_mappings.emplace(midi_mappings.end(), 
+            MidiMapping{
+                .controller_id = (mapMidi["controller_id"].isNull()) ? -1 : mapMidi["controller_id"].asInt(),
+                .type = (mapMidi["type"].isNull()) ? "on" : mapMidi["type"].asString(),
+                .channel = (mapMidi["channel"].isNull()) ? 0 : mapMidi["channel"].asInt(),
+            }
+        );
+        if (midi_mappings.back().type == "cc") {
+            midi_mappings.back().key_controller.action = (mapMidi["controller"]["action"].isNull()) ? "none" : mapMidi["controller"]["action"].asString();
+            midi_mappings.back().velocity_value.action = (mapMidi["value"]["action"].isNull()) ? "none" : mapMidi["value"]["action"].asString();
+        } else {
+            midi_mappings.back().key_controller.action = (mapMidi["key"]["action"].isNull()) ? "none" : mapMidi["key"]["action"].asString();
+            midi_mappings.back().velocity_value.action = (mapMidi["velocity"]["action"].isNull()) ? "none" : mapMidi["velocity"]["action"].asString();
+        };
+        if (midi_trigger.find(midi_mappings.back().key_controller.action) == midi_trigger.end()) {
+                midi_trigger.emplace(midi_mappings.back().key_controller.action, std::vector<int>{static_cast<int>(midi_mappings.size())-1});
+        } else {
+            midi_trigger[midi_mappings.back().key_controller.action].push_back(static_cast<int>(midi_mappings.size())-1);
+        };
+        if (midi_trigger.find(midi_mappings.back().velocity_value.action) == midi_trigger.end()) {
+                midi_trigger.emplace(midi_mappings.back().velocity_value.action, std::vector<int>{static_cast<int>(midi_mappings.size())-1});
+        } else {
+            midi_trigger[midi_mappings.back().velocity_value.action].push_back(static_cast<int>(midi_mappings.size())-1);
+        };
+    };
     return 0;
 }
 
@@ -167,62 +244,62 @@ int libloServerMethods(){
         return 0;
 }
 
-int sendOSC(puara_controller::ControllerEvent puaraEvent) {
-    if (puaraEvent.eventAction == -1)
-        return 1;
+// int sendOSC(puara_controller::ControllerEvent puaraEvent) {
+//     if (puaraEvent.eventAction == -1)
+//         return 1;
     
-    std::string puara_namespace = "/" + puara_controller::identifier + "/" + std::to_string(puaraEvent.controller) + "/" + puaraEvent.eventName;
+//     std::string puara_namespace = "/" + puara_controller::identifier + "/" + std::to_string(puaraEvent.controller) + "/" + puaraEvent.eventName;
 
-    lo::Message msg;
-    switch (puaraEvent.eventType) {
-        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
-            break;
-        case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-            switch (puaraEvent.eventAction) {
-                case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration);
-                    break;
-                case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration);
-                    break;
-                case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration);
-                    break;
-                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration);
-                    break;
-            }
-            break;
-        case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].touchpad);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].finger);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].X);
-            msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].Y);
-            break;
-        case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
-            if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z);
-                } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].X);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Y);
-                    msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Z);
-                }
-            break;
-    }
-    osc_sender.send(puara_namespace, msg);
+//     lo::Message msg;
+//     switch (puaraEvent.eventType) {
+//         case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].value);
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.button[puaraEvent.eventAction].event_duration);
+//             break;
+//         case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+//             switch (puaraEvent.eventAction) {
+//                 case SDL_GAMEPAD_AXIS_LEFTX: case SDL_GAMEPAD_AXIS_LEFTY:
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].X);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].Y);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_LEFTX].event_duration);
+//                     break;
+//                 case SDL_GAMEPAD_AXIS_RIGHTX: case SDL_GAMEPAD_AXIS_RIGHTY:
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].X);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].Y);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.analog[SDL_GAMEPAD_AXIS_RIGHTX].event_duration);
+//                     break;
+//                 case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].value);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_LEFT_TRIGGER].event_duration);
+//                     break;
+//                 case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].value);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.trigger[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER].event_duration);
+//                     break;
+//             }
+//             break;
+//         case SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN: case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION: case SDL_EVENT_GAMEPAD_TOUCHPAD_UP:
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].touchpad);
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].finger);
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].X);
+//             msg.add(puara_controller::controllers[puaraEvent.controller].state.touch[puaraEvent.touchID].Y);
+//             break;
+//         case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
+//             if (puaraEvent.eventAction == SDL_SENSOR_ACCEL) {
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].X);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Y);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_ACCEL].Z);
+//                 } else if (puaraEvent.eventAction == SDL_SENSOR_GYRO) {
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].X);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Y);
+//                     msg.add(puara_controller::controllers[puaraEvent.controller].state.motion[SDL_SENSOR_GYRO].Z);
+//                 }
+//             break;
+//     }
+//     osc_sender.send(puara_namespace, msg);
 
-    return 0;
-}
+//     return 0;
+// }
 
 // High-level gesture draft for azimuth
 int calculateAngle(int X, int Y) {
@@ -253,6 +330,21 @@ float extractNumberFromString(const std::string& input) {
         throw std::invalid_argument("Invalid number format");
     }
 }
+
+int sendOSC(puara_controller::ControllerEvent currentEvent) {
+    if (osc_trigger.find(currentEvent.eventName) != osc_trigger.end()) {
+        for (int mappingID : osc_trigger[currentEvent.eventName]) {
+            lo::Address osc_sender(forward_address, forward_port);
+            lo::Message msg;
+            for (OSCMapping::OSCArguments arguments : osc_mappings[mappingID].arguments) {
+                msg.add(puara_controller::mapRange(
+                    puara_controller::controllers[osc_mappings[mappingID].controller_id].state.button[puaraEvent.eventAction].value
+                ));
+            }
+        }
+    }
+}
+
 
 int sendCustomOSC(puara_controller::ControllerEvent puaraEvent) {
     if (puaraEvent.eventAction == -1 ||

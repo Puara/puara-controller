@@ -82,58 +82,76 @@ namespace puara_controller {
             size_t write_index_;
     };
 
-    struct Button {
+    // struct Button {
+    //     int value = 0; 
+    //     int event_duration = 0; 
+    //     Uint64 event_timestamp = 0;
+    // };
+    // struct Trigger {
+    //     bool state = false; 
+    //     int value = 0; 
+    //     int event_duration = 0; 
+    //     Uint64 event_timestamp = 0;
+    // };
+    // struct Sensor {
+    //     float X = 0.0;
+    //     float Y = 0.0;
+    //     float Z = 0.0;
+    //     int event_duration = 0; 
+    //     Uint64 event_timestamp = 0;
+    // };
+    // struct Analog {
+    //     bool state = false; 
+    //     int X = 0; 
+    //     int Y = 0; 
+    //     int event_duration = 0; 
+    //     Uint64 event_timestamp = 0;
+    // };
+    // struct Touch {
+    //     bool state = false;
+    //     int action = 0;
+    //     int touchpad = 0;
+    //     int finger = 0;
+    //     float X = 0.0;
+    //     float Y = 0.0;
+    //     float last_X = 0.0;
+    //     float last_Y = 0.0;
+    //     float pressure = 0.0;
+    //     int event_duration = 0; 
+    //     Uint64 event_timestamp = 0;
+    // };
+
+    // struct ControllerState {
+    //     std::unordered_map<int, Button> button;
+    //     std::unordered_map<int, Sensor> motion;
+    //     std::unordered_map<int, Analog> analog;
+    //     std::unordered_map<int, Trigger> trigger;
+    //     std::unordered_map<int, Touch> touch;
+    //     bool rumble;
+    // };
+
+    struct ControllerState {
         int value = 0; 
         int event_duration = 0; 
         Uint64 event_timestamp = 0;
-    };
-    struct Trigger {
-        bool state = false; 
-        int value = 0; 
-        int event_duration = 0; 
-        Uint64 event_timestamp = 0;
-    };
-    struct Sensor {
+        bool state = false;
         float X = 0.0;
         float Y = 0.0;
         float Z = 0.0;
-        int event_duration = 0; 
-        Uint64 event_timestamp = 0;
-    };
-    struct Analog {
-        bool state = false; 
-        int X = 0; 
-        int Y = 0; 
-        int event_duration = 0; 
-        Uint64 event_timestamp = 0;
-    };
-    struct Touch {
-        bool state = false;
         int action = 0;
         int touchpad = 0;
         int finger = 0;
-        float X = 0.0;
-        float Y = 0.0;
         float last_X = 0.0;
         float last_Y = 0.0;
         float pressure = 0.0;
-        int event_duration = 0; 
-        Uint64 event_timestamp = 0;
-    };
-    struct ControllerState {
-        std::unordered_map<int, Button> button;
-        std::unordered_map<int, Sensor> motion;
-        std::unordered_map<int, Analog> analog;
-        std::unordered_map<int, Trigger> trigger;
-        std::unordered_map<int, Touch> touch;
-        bool rumble;
     };
 
     class Controller {
         public:
             Controller() = default;
             Controller(int id, SDL_Gamepad* instance, int move_buffer_size);
-            ControllerState state;
+            //ControllerState state;
+            std::unordered_map<std::string, ControllerState> state;
             CircularBuffer<ControllerState> discrete_buffer;
             bool is_open;
             int id;

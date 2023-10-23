@@ -285,22 +285,26 @@
     ],
     "midi": [
         {
+            "controller_id": -1,
             "type": "on",
             "channel": 0,
-            "value": 60,
+            "key": {"action": "int", "value": "60"},
             "velocity": {"action": "A", "value": "value", "min": 0, "max": 127}
         },
         {
+            "controller_id": -1,
             "type": "off",
             "channel": 0,
-            "value": 60,
+            "key": {"action": "int", "value": "60"},
             "velocity": {"action": "B", "value": 0}
         },
         {
+            "controller_id": 0,
             "type": "cc",
             "channel": 0,
-            "value": {"action": "triggerleft", "value": "value", "min": 127, "max": 0},
-            "controller": 15
+            "controller": {"action": "int", "value": "15"},
+            "value": {"action": "triggerleft", "value": "value", "min": 127, "max": 0}
+            
         }
     ]
 }
