@@ -99,42 +99,14 @@ Timestamps are integer values in milliseconds.
 
 ### OSC Forwarders
 
-The JSON config file can also set OSC addresses for certain messages to be forwarded.
-This is useful when a specific message needs to sent to another application that doesn't have flexibility in defining namespaces and message ranges.
+The JSON config file can also set custom OSC addresses.
+This is useful when a specific message needs to send data to another application that doesn't have flexibility in defining namespaces and message ranges.
 
-One example of the syntax to add a custom OSC forwarder is:
+The [config.json](/config.json) file is set up to send all available game controller data. At this moment it is mandatory to load the file to run the program (using the `-c` option).  
 
-```json
-"forwarders": [
-        {
-            "internal_address": "A",
-            "controller_id": 0,
-            "forward_namespace": "/button",
-            "forward_arguments": ["value", "timestamp"],
-            "range": {"min": 0, "max": 1}
-        },
-        {
-            "internal_address": "triggerright",
-            "controller_id": 1,
-            "forward_namespace": "/control/volume",
-            "forward_arguments": ["value"],
-            "range": {"min": 0, "max": 127}
-        },
-        {
-            "internal_address": "accel",
-            "controller_id": 0,
-            "forward_namespace": "/motion",
-            "forward_arguments": ["$angles", "X", "Z"],
-            "range": {"min": -90, "max": 90}
-        }
-]
-```
+OBS: The range parameter only modifies values and axis (X, Y, and Z). It does not range timestamps or event durations.
 
-OBS: The range parameter only modifies values and axis (X, Y, and Z). It does not range timestamps.
-
-You can also add strings to add as arguments by using `$`, as shown in the accel example.
-
-Keep in mind that is also necessary to set the **forward_address** and **forward_port** parameters in the config section of the JSON file to forward OSC messages.
+You can also add strings and hardcoded OSC arguments. SOme examples are available at the [config.json](/config.json) file.
 
 ## Troubleshoot / Extra info
 
