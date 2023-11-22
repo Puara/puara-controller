@@ -46,10 +46,10 @@ namespace puara_controller {
         }},
         {"button",{ /* This list is generated from SDL_GameControllerButton */
             {SDL_GAMEPAD_BUTTON_INVALID,"invalid"},
-            {SDL_GAMEPAD_BUTTON_A,"A"},
-            {SDL_GAMEPAD_BUTTON_B,"B"},
-            {SDL_GAMEPAD_BUTTON_X,"X"},
-            {SDL_GAMEPAD_BUTTON_Y,"Y"},
+            {SDL_GAMEPAD_BUTTON_SOUTH,"A"},
+            {SDL_GAMEPAD_BUTTON_EAST,"B"},
+            {SDL_GAMEPAD_BUTTON_WEST,"X"},
+            {SDL_GAMEPAD_BUTTON_NORTH,"Y"},
             {SDL_GAMEPAD_BUTTON_BACK,"back"},
             {SDL_GAMEPAD_BUTTON_GUIDE,"guide"},
             {SDL_GAMEPAD_BUTTON_START,"start"},
@@ -203,13 +203,8 @@ namespace puara_controller {
         } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
             openController(event.gdevice.which);
         }
-
-
-        std::cout << "event.type: " << event.type << std::endl;
-
-
         switch (event.type) {
-            case SDL_EVENT_GAMEPAD_REMOVED:
+            case SDL_EVENT_GAMEPAD_REMOVED: case SDL_EVENT_JOYSTICK_REMOVED:
                     SDL_CloseGamepad(controllers[event.gdevice.which].instance);
                     controllers.erase(event.gdevice.which);
                     if (verbose) std::cout << "Controller " << event.gdevice.which << " vanished!" << std::endl;
