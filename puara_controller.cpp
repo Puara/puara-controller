@@ -90,6 +90,28 @@ namespace puara_controller {
         }}
     };
 
+    std::unordered_map<std::string, int> State2int = {
+        {"value",0},
+        {"duration",1},
+        {"timestamp",2},
+        {"state",3},
+        {"X",4},
+        {"Y",5},
+        {"Z",6},
+        {"touchpad",7},
+        {"finger",8},
+        {"pressure",9}
+    };
+
+    int state2int(std::string state){
+        auto it = State2int.find(state);
+        if (it != State2int.end()) {
+            return it->second;
+        } else {
+            return -1;
+        }
+    }
+
     int start() {
         std::cout << "Starting Puara Controller..." << std::endl;
         if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR) < 0) {
@@ -105,13 +127,14 @@ namespace puara_controller {
         joiner = std::thread(joinAllThreads, std::ref(threads));
         std::cout << "Puara Controller started successfully" << std::endl;
         return 0;
-    };
+    }
 
-    int rumble(int controllerID, int time=1000, float lowFreq=1.0, float hiFreq=1.0f) {
+    // freq = floats from 0 to 1, time in ms
+    int rumble(int controllerID, int time, float lowFreq, float hiFreq) {
         int rangedControllerID = clip_(controllerID, 0, (controllers.size()-1));
-        int rangedTime = clip_(time, 10, 10000);
+        int rangedTime = clip_(time, 100, 10000);
         float rangedLowFreq = clip_(lowFreq, 0.0f, 1.0f) * 65535;
-        float rangedHiFreq = clip_(hiFreq, 0.0f, 1.0f) * 65535;
+        float rangedHiFreq = clip_(hiFreq, 0.0f, 1.0f) * 65535;      
         SDL_RumbleGamepad(controllers[rangedControllerID].instance, rangedLowFreq, rangedHiFreq, time);
         if (verbose) std::cout << "Controller " << rangedControllerID << " rumble!" << std::endl;
         return 0;
@@ -124,7 +147,7 @@ namespace puara_controller {
             controllers[joy_index].id = joy_index;
             controllers[joy_index].instance = SDL_OpenGamepad(joy_index);
             controllers[joy_index].is_open = true;
-            std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index) 
+            std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index)
                       << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
             if (enableMotion) {
                 if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
@@ -152,7 +175,7 @@ namespace puara_controller {
         } else {
             std::cerr << "Error: the controller is not supported by the game controller interface" << std::endl;
             return 1;
-        } 
+        }
     }
 
     float clip_(float n, float lower, float upper) {
@@ -175,21 +198,22 @@ namespace puara_controller {
     }
 
     int pullSDLEvent(SDL_Event event){
-        currentEvent.controller = event.gdevice.which;
-        currentEvent.eventType = event.type;
-        currentEvent.eventAction = 0;
-        currentEvent.touchID = -1;
-
         if (event.type == SDL_EVENT_QUIT) {
             quit();
         } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
             openController(event.gdevice.which);
         }
+
+
+        std::cout << "event.type: " << event.type << std::endl;
+
+
         switch (event.type) {
             case SDL_EVENT_GAMEPAD_REMOVED:
                     SDL_CloseGamepad(controllers[event.gdevice.which].instance);
                     controllers.erase(event.gdevice.which);
                     if (verbose) std::cout << "Controller " << event.gdevice.which << " vanished!" << std::endl;
+                    return 1;
                 break;
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
                 controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]].value = event.gbutton.state;
@@ -201,7 +225,7 @@ namespace puara_controller {
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                 switch (event.gaxis.axis) {
                     case SDL_GAMEPAD_AXIS_LEFTX:
-                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X) return 1;                       
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].X = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp);
@@ -209,7 +233,7 @@ namespace puara_controller {
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFTY:
-                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].Y) return 1; 
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].Y) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].Y = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].Y = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp);
@@ -217,7 +241,7 @@ namespace puara_controller {
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTX:
-                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].X) return 1; 
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].X) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].X = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTY]].X = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].event_timestamp);
@@ -225,7 +249,7 @@ namespace puara_controller {
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTY:
-                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].Y) return 1; 
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].Y) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].Y = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTY]].Y = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_RIGHTX]].event_timestamp);
@@ -233,7 +257,7 @@ namespace puara_controller {
                         }
                         break;
                     case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFT_TRIGGER]].value) return 1; 
+                        if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFT_TRIGGER]].value) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFT_TRIGGER]].value = event.gaxis.value;
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "trigger") ) {
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFT_TRIGGER]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFT_TRIGGER]].event_timestamp);
@@ -285,8 +309,13 @@ namespace puara_controller {
                 break;
             default:
                 currentEvent.eventAction = -1;
+                return 1;
                 break;
         }
+        currentEvent.controller = event.gdevice.which;
+        currentEvent.eventType = event.type;
+        currentEvent.eventAction = 0;
+        currentEvent.touchID = -1;
         return 0;
     }
 
@@ -296,7 +325,7 @@ namespace puara_controller {
                 std::cout << "Event on controller " << currentEvent.controller
                         << ": " << SDL2Name[SDL2Name["events"][currentEvent.eventType]][currentEvent.eventAction]
                         << " " << controllers[currentEvent.controller].state[SDL2Name["button"][currentEvent.eventAction]].value
-                        << " (duration: " << controllers[currentEvent.controller].state[SDL2Name["button"][currentEvent.eventAction]].event_duration 
+                        << " (duration: " << controllers[currentEvent.controller].state[SDL2Name["button"][currentEvent.eventAction]].event_duration
                         << ")" << std::endl;
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
@@ -342,11 +371,11 @@ namespace puara_controller {
                               << ": " << SDL2Name[SDL2Name["events"][currentEvent.eventType]][currentEvent.eventAction];
                     if (currentEvent.eventAction == SDL_SENSOR_ACCEL) {
                         std::cout << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_ACCEL]].X
-                                  << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_ACCEL]].Y 
+                                  << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_ACCEL]].Y
                                   << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_ACCEL]].Z << std::endl;
                     } else if (currentEvent.eventAction == SDL_SENSOR_GYRO) {
                         std::cout << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_GYRO]].X
-                                  << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_GYRO]].Y 
+                                  << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_GYRO]].Y
                                   << " " << controllers[currentEvent.controller].state[SDL2Name["motion"][SDL_SENSOR_GYRO]].Z << std::endl;
                     }
                 }
@@ -430,8 +459,8 @@ namespace puara_controller {
         return item;
     }
 
-    Controller::Controller(int id, SDL_Gamepad* instance, int move_buffer_size) 
-        : id(id), instance(instance), discrete_buffer(move_buffer_size), is_open(true) {          
+    Controller::Controller(int id, SDL_Gamepad* instance, int move_buffer_size)
+        : id(id), instance(instance), discrete_buffer(move_buffer_size), is_open(true) {
             for (auto const& i: SDL2Name["button"]) {
                 state.emplace(i.second, ControllerState());
             }
@@ -452,50 +481,30 @@ namespace puara_controller {
             }
     }
 
-    bool isSensorChanged(int joy_index, int axis, std::string sensor) {
+    bool isSensorChanged(int joy_index, int axis, std::string sensorType) {
         bool convertedValue = false;
         bool answer;
-        if (sensor == "trigger") {
-            if (controllers[joy_index].state.trigger[axis].value != 0) {convertedValue = true;}
-            answer = convertedValue != controllers[joy_index].state.trigger[axis].state;
-            if (answer) {controllers[joy_index].state.trigger[axis].state = !controllers[joy_index].state.trigger[axis].state;}
-        } else if (sensor == "analog") {
-            if (controllers[joy_index].state.analog[axis].X != 0 || controllers[joy_index].state.analog[axis].Y !=0) {convertedValue = true;}
-            answer = convertedValue != controllers[joy_index].state.analog[axis].state;
-            if (answer) {controllers[joy_index].state.analog[axis].state = !controllers[joy_index].state.analog[axis].state;}
-        } else if (sensor == "touch") {
-            if (controllers[joy_index].state.touch[axis].X != controllers[joy_index].state.touch[axis].last_X || 
-                controllers[joy_index].state.touch[axis].Y != controllers[joy_index].state.touch[axis].last_Y) {
+        if (sensorType == "trigger") {
+            if (controllers[joy_index].state[SDL2Name["axis"][axis]].value != 0) {convertedValue = true;}
+            answer = convertedValue != controllers[joy_index].state[SDL2Name["axis"][axis]].state;
+            if (answer) {controllers[joy_index].state[SDL2Name["axis"][axis]].state = !controllers[joy_index].state[SDL2Name["axis"][axis]].state;}
+        } else if (sensorType == "analog") {
+            if (controllers[joy_index].state[SDL2Name["axis"][axis]].X == 0 && controllers[joy_index].state[SDL2Name["axis"][axis]].Y ==0) {
+                convertedValue = false;
+            } else {
+                convertedValue = true;
+            }
+            answer = convertedValue != controllers[joy_index].state[SDL2Name["axis"][axis]].state;
+            if (answer) {controllers[joy_index].state[SDL2Name["axis"][axis]].state = !controllers[joy_index].state[SDL2Name["axis"][axis]].state;}
+        } else if (sensorType == "touch") {
+            if (controllers[joy_index].state[std::to_string(axis)].X != controllers[joy_index].state[std::to_string(axis)].last_X ||
+                controllers[joy_index].state[std::to_string(axis)].Y != controllers[joy_index].state[std::to_string(axis)].last_Y) {
                     convertedValue = true;
             }
-            answer = convertedValue != controllers[joy_index].state.touch[axis].state;
-            if (answer) {controllers[joy_index].state.touch[axis].state = !controllers[joy_index].state.touch[axis].state;}
+            answer = convertedValue != controllers[joy_index].state[std::to_string(axis)].state;
+            if (answer) {controllers[joy_index].state[std::to_string(axis)].state = !controllers[joy_index].state[std::to_string(axis)].state;}
         }
-        return answer; 
-    }
-
-    float mapRange(float in, float inMin, float inMax, float outMin, float outMax) {
-        if (outMin != outMax) {
-            return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-        } else {
-            return in;
-        }
-    }
-
-    int mapRange(int in, int inMin, int inMax, float outMin, float outMax) {
-        if (outMin != outMax) {
-            return round((in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
-        } else {
-            return in;
-        }
-    }
-
-    double mapRange(double in, double inMin, double inMax, double outMin, double outMax) {
-        if (outMin != outMax) {
-            return (in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-        } else {
-            return in;
-        }
+        return answer;
     }
 
     int nano2mili(Uint64 ns) {

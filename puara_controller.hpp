@@ -61,9 +61,14 @@ namespace puara_controller {
     extern bool print_events;
     extern bool print_motion_data;
 
-    int mapRange(int in, int inMin, int inMax, float outMin, float outMax);
-    float mapRange(float in, float inMin, float inMax, float outMin, float outMax);
-    double mapRange(double in, double inMin, double inMax, double outMin, double outMax);
+    template <typename InType, typename OutType>
+    OutType mapRange(InType in, InType inMin, InType inMax, OutType outMin, OutType outMax) {
+        if (outMin != outMax) {
+            return static_cast<OutType>((in - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+        } else {
+            return static_cast<OutType>(in);
+        }
+    }
 
     template<typename T>
     class CircularBuffer {
@@ -81,54 +86,6 @@ namespace puara_controller {
             size_t read_index_;
             size_t write_index_;
     };
-
-    // struct Button {
-    //     int value = 0; 
-    //     int event_duration = 0; 
-    //     Uint64 event_timestamp = 0;
-    // };
-    // struct Trigger {
-    //     bool state = false; 
-    //     int value = 0; 
-    //     int event_duration = 0; 
-    //     Uint64 event_timestamp = 0;
-    // };
-    // struct Sensor {
-    //     float X = 0.0;
-    //     float Y = 0.0;
-    //     float Z = 0.0;
-    //     int event_duration = 0; 
-    //     Uint64 event_timestamp = 0;
-    // };
-    // struct Analog {
-    //     bool state = false; 
-    //     int X = 0; 
-    //     int Y = 0; 
-    //     int event_duration = 0; 
-    //     Uint64 event_timestamp = 0;
-    // };
-    // struct Touch {
-    //     bool state = false;
-    //     int action = 0;
-    //     int touchpad = 0;
-    //     int finger = 0;
-    //     float X = 0.0;
-    //     float Y = 0.0;
-    //     float last_X = 0.0;
-    //     float last_Y = 0.0;
-    //     float pressure = 0.0;
-    //     int event_duration = 0; 
-    //     Uint64 event_timestamp = 0;
-    // };
-
-    // struct ControllerState {
-    //     std::unordered_map<int, Button> button;
-    //     std::unordered_map<int, Sensor> motion;
-    //     std::unordered_map<int, Analog> analog;
-    //     std::unordered_map<int, Trigger> trigger;
-    //     std::unordered_map<int, Touch> touch;
-    //     bool rumble;
-    // };
 
     struct ControllerState {
         int value = 0; 
@@ -161,6 +118,8 @@ namespace puara_controller {
 
     extern std::unordered_map<int, Controller> controllers;
     extern std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name;
+    extern std::unordered_map<std::string, int> State2int;
+    int state2int(std::string state);
 
     extern std::int32_t elapsed_time_;
     float clip_(float n, float lower, float upper);
