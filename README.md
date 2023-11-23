@@ -67,9 +67,9 @@ This is useful when a specific message needs to send data to another application
 
 The [config.json](/config.json) file is set up to send all available game controller data. At this moment it is mandatory to load the file to run the program (using the `-c` option).  
 
-OBS: The range parameter only modifies values and axis (X, Y, and Z). It does not range timestamps or event durations.
+OBS: The range parameter only modifies values and axes (X, Y, and Z). It does not range timestamps or event durations.
 
-You can also add strings and hardcoded OSC arguments. SOme examples are available at the [config.json](/config.json) file.
+You can also add strings and hardcoded OSC arguments. Some examples are available in the [config.json](/config.json)](/config.json) file.
 
 ## Troubleshoot / Extra info
 
