@@ -7,9 +7,7 @@ This program converts game controller data into OSC.
   - [Usage](#usage)
     - [Current OSC namespace](#current-osc-namespace)
       - [Messages sending value and duration of the last event:](#messages-sending-value-and-duration-of-the-last-event)
-      - [Messages sending values (x and y) + duration of the last event:](#messages-sending-values-x-and-y--duration-of-the-last-event)
-      - [Messages sending x, y, and z values:](#messages-sending-x-y-and-z-values)
-      - [The program also receives (default port 9000)](#the-program-also-receives-default-port-9000)
+      - [The program also receives OSC messages (default port 9000)](#the-program-also-receives-osc-messages-default-port-9000)
     - [OSC Forwarders](#osc-forwarders)
   - [Troubleshoot / Extra info](#troubleshoot--extra-info)
 
@@ -51,47 +49,12 @@ Both ports, along with other options, can be changed through the JSON config fil
 
 #### Messages sending value and duration of the last event:
 
-Values can be either 0 or 1, except for triggerleft and triggerright that output integer values between 0 and 32768.
-Timestamps are integer values in miliseconds.
+* Values can be either 0 or 1, except for triggerleft and triggerright that output integer values between 0 and 32768
+* Timestamps are integer values in milliseconds
+* X and Y are integer values between -32768 and 32768
+* X, Y, and Z are float values between -40 and 40
 
-| namespace                                     | values                 |
-|-----------------------------------------------|------------------------|
-| /puaracontroller/<JOYSTICK_ID>/A              | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/B              | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/X              | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/Y              | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/leftstick      | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/rightstick     | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/leftshoulder   | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/rightshoulder  | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/dpad_up        | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/dpad_down      | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/dpad_left      | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/dpad_right     | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/triggerleft    | ii  (value, timestamp) |
-| /puaracontroller/<JOYSTICK_ID>/triggerright   | ii  (value, timestamp) |
-
-#### Messages sending values (x and y) + duration of the last event:
-
-X and Y are integer values between -32768 and 32768.
-Timestamps are integer values in milliseconds.
-
-| namespace                                   | values                  |
-|---------------------------------------------|-------------------------|
-| /puaracontroller/<JOYSTICK_ID>/analogleft   | iii  (X, Y, timestamp)  |
-| /puaracontroller/<JOYSTICK_ID>/analogright  | iii  (X, Y, timestamp)  |
-
-#### Messages sending x, y, and z values:
-
-X, Y, and Z are float values between -40 and 40.
-Timestamps are integer values in milliseconds.
-
-| namespace                             | values                     |
-|---------------------------------------|----------------------------|
-| /puaracontroller/<JOYSTICK_ID>/accel  | fff  (X, Y, Z, timestamp)  |
-| /puaracontroller/<JOYSTICK_ID>/gyro   | fff  (X, Y, Z, timestamp)  |
-
-#### The program also receives (default port 9000)
+#### The program also receives OSC messages (default port 9000)
 
 | namespace                | values                                         |
 |--------------------------|------------------------------------------------|

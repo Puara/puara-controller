@@ -18,6 +18,7 @@
 #include <condition_variable>
 #include "json/json.h"
 #include <fstream>
+#include <sstream>
 #include <unordered_map>
 #include <algorithm>
 #include <iterator>
@@ -26,9 +27,11 @@
 
 #include <cmath>
 
-int osc_server_port = 9000;
-std::string osc_client_address = "localhost";
-int osc_client_port = 9001;
+#include "default_config.h"
+
+int osc_server_port;
+std::string osc_client_address ;
+int osc_client_port;
 
 std::condition_variable cv;
 std::mutex mtx;
@@ -95,11 +98,7 @@ void printHelp(const char* programName) {
 }
 
 int readJson(std::string jsonFileName) {
-    std::ifstream jsonFile(jsonFileName);
-    if (!jsonFile.is_open()) {
-        std::cerr << "Failed to open JSON file: " << jsonFileName << std::endl;
-        return 1;
-    }
+    std::istringstream jsonFile(jsonFileName);
     Json::Value root;
     jsonFile >> root;
     // Reading config
@@ -398,7 +397,11 @@ int main(int argc, char* argv[]) {
 
     std::signal(SIGINT, killlHandler);
 
-    if (useConfig) readJson(jsonFileName);
+    if (useConfig) {
+        readJson(jsonFileName);
+    } else {
+        readJson(defaultConfig);
+    }
 
     if ( puara_controller::start() ) {
         exit(EXIT_FAILURE);
