@@ -69,7 +69,7 @@ The [config.json](/config.json) file is set up to send all available game contro
 
 OBS: The range parameter only modifies values and axes (X, Y, and Z). It does not range timestamps or event durations.
 
-You can also add strings and hardcoded OSC arguments. Some examples are available in the [config.json](/config.json)](/config.json) file.
+You can also add strings and hardcoded OSC arguments. Some examples are available in the [config.json](/config.json) file.
 
 ## Troubleshoot / Extra info
 
