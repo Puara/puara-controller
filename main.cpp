@@ -30,7 +30,7 @@
 #include "default_config.h"
 
 int osc_server_port;
-std::string osc_client_address ;
+std::string osc_client_address;
 int osc_client_port;
 
 std::condition_variable cv;

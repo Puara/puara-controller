@@ -207,7 +207,7 @@ namespace puara_controller {
             case SDL_EVENT_GAMEPAD_REMOVED: case SDL_EVENT_JOYSTICK_REMOVED:
                     SDL_CloseGamepad(controllers[event.gdevice.which].instance);
                     controllers.erase(event.gdevice.which);
-                    if (verbose) std::cout << "Controller " << event.gdevice.which << " vanished!" << std::endl;
+                    std::cout << "Controller " << event.gdevice.which << " vanished!" << std::endl;
                     return 1;
                 break;
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN: case SDL_EVENT_GAMEPAD_BUTTON_UP:
