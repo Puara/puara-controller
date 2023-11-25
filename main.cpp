@@ -398,7 +398,16 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, killlHandler);
 
     if (useConfig) {
-        readJson(jsonFileName);
+        std::ifstream jsonFile(jsonFileName);
+        if (jsonFile.is_open()) {
+            std::stringstream buffer;
+            buffer << jsonFile.rdbuf();
+            std::string jsonString = buffer.str();
+            readJson(jsonString);
+        } else {
+            std::cout << "JSON file could not be opened. Using default configuration." << std::endl;
+            readJson(defaultConfig);
+        }
     } else {
         readJson(defaultConfig);
     }
