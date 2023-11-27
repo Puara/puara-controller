@@ -230,7 +230,7 @@ namespace puara_controller {
         if (event.type == SDL_EVENT_QUIT) {
             quit();
         } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
-            openController(event.gdevice.which);
+            openController(event.gdevice.which); // shouldn't there be a return in this case and the one above?
         }
         // JM: are we sure controllers isn't being used in another thread in this function?
         // I recommend running with -fsanitize=address -fsanitize=undefined first, and then making another build 
@@ -258,7 +258,7 @@ namespace puara_controller {
                         if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].X = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
-                            controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp);
+                            controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp); // 357 line length is not too great for readability
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
@@ -313,6 +313,12 @@ namespace puara_controller {
                 // JM: std::to_string can be pretty slow, it touches locale and all this. 
                 // Check out std::from_chars / to_chars (and do it only once, even then it's a complex algorithm.
                 // Or better, precompute a small table of numbers from 0 to 255? :)
+                // JM: also.. here's how I'd write it: 
+                // controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)] = { 
+                //     .action = event.gtouchpad.type
+                //   , .event = event.gtouchpad.touchpad 
+                //   , .finger = ...
+                // };
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].action = event.gtouchpad.type;
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].touchpad = event.gtouchpad.touchpad;
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].finger = event.gtouchpad.finger;
@@ -324,7 +330,7 @@ namespace puara_controller {
                     controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].event_timestamp = event.gtouchpad.timestamp;
                 }
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_X = event.gtouchpad.x;
-                controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_Y = event.gtouchpad.y;
+                controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_Y = event.gtouchpad.y; // Is it normal that it's the same?
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                 if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
@@ -516,7 +522,21 @@ namespace puara_controller {
 
     bool isSensorChanged(int joy_index, int axis, std::string sensorType) {
         bool convertedValue = false;
-        bool answer;
+        bool answer; // JM: initialization
+        // JM: let's look how his code looks if we use some variables:
+
+
+        if (sensorType == "trigger") {
+            auto& axis = controllers[joy_index].state[SDL2Name["axis"][axis]];
+            if (axis.value != 0) 
+              convertedValue = true;
+
+            answer = convertedValue != axis.state;
+            
+            if (answer) 
+              axis.state = !axis.state; 
+        }
+
         if (sensorType == "trigger") {
             if (controllers[joy_index].state[SDL2Name["axis"][axis]].value != 0) {convertedValue = true;}
             answer = convertedValue != controllers[joy_index].state[SDL2Name["axis"][axis]].state;
@@ -536,11 +556,13 @@ namespace puara_controller {
             }
             answer = convertedValue != controllers[joy_index].state[std::to_string(axis)].state;
             if (answer) {controllers[joy_index].state[std::to_string(axis)].state = !controllers[joy_index].state[std::to_string(axis)].state;}
-        }
+        } // Unhandled new sensorType that comes up in a new SDL version: we return an uninitialized value
+        // The best in this case is to return an std::optional though I'd saay?
         return answer;
     }
 
     int nano2mili(Uint64 ns) {
+        // using namespace std::chrono; in this function is perfectly fine
         return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(ns)).count());
     }
 
