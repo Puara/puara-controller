@@ -190,7 +190,14 @@ int readJson(std::string jsonFileName) {
                 midi_trigger.emplace(midi_mappings.back().key_controller.action, std::vector<int>{static_cast<int>(midi_mappings.size())-1});
         } else {
             int mappingIndex = static_cast<int>(midi_mappings.size())-1;
-            auto checkDuplicate = std::find(midi_trigger[midi_mappings.back().key_controller.action].begin(), midi_trigger[midi_mappings.back().key_controller.action].end(), mappingIndex);
+            // JM: OMG
+            // I would write it like this:
+            // auto& trigger = midi_trigger[midi_mappings.back().key_controller.action];
+            // if(std::ranges::find(trigger, mappingIndex); == trigger.end() ) { 
+            //     trigger.push_back(mappingIndex);
+            // }
+
+            auto checkDuplicate = std::find(.begin(), midi_trigger[midi_mappings.back().key_controller.action].end(), mappingIndex);
             if (checkDuplicate == midi_trigger[midi_mappings.back().key_controller.action].end()) {
                 midi_trigger[midi_mappings.back().key_controller.action].push_back(mappingIndex);
             }
@@ -219,6 +226,7 @@ void killlHandler(int signum) {
 }
 
 int libloServerMethods(){
+    // JM: my oscour library would amaze you :p https://github.com/jcelerier/oscour 
     osc_server.add_method("/puaracontroller/rumble", "iiff",
         [&](lo_arg **argv, int) {
             int id = argv[0]->i;
@@ -238,15 +246,18 @@ int libloServerMethods(){
 }
 
 // High-level gesture draft for azimuth
-int calculateAngle(int X, int Y) {
+int calculateAngle(int X, int Y) { 
+    // JM: Why not take the arguments as double directly, this way you can use the function with higher precision data
     double x = puara_controller::mapRange(static_cast<double>(X), -32768.0, 32767.0, -1.0, 1.0);
     double y = puara_controller::mapRange(static_cast<double>(-1*Y), -32768.0, 32767.0, -1.0, 1.0);
-    double azimuth = std::atan2(x, y) * 180 / M_PI;
-    return static_cast<int>(azimuth);
+    double azimuth = std::atan2(x, y) * 180 / M_PI; // JM: std::numbers::pi_v in #include <numbers>... M_PI is not available on all OS lol
+    return static_cast<int>(azimuth); // JM: same, why not return the double? the caller can cast it back to int if they want
 }
 
 enum ArgumentType { Integer, Float, NotANumber };
 
+// JM: Why not return the enum type directly? 
+// This way this gives the static analyzer more information
 int getType(const std::string& input) {
     std::istringstream iss(input);
     float temp;
@@ -257,6 +268,8 @@ int getType(const std::string& input) {
     }
 }
 
+// std::from_chars has the advantage of not throwing exceptions
+// and being mmuuuuuuch faster
 float extractNumberFromString(const std::string& input) {
     std::istringstream iss(input);
     float number;
@@ -267,6 +280,7 @@ float extractNumberFromString(const std::string& input) {
     }
 }
 
+// JM: boost::algorithm::replace_all()
 std::string replaceString(const std::string& initial, const std::string& target, const std::string& replacement) {
     std::string result = initial;
     size_t pos = result.find(target);
@@ -283,6 +297,7 @@ int sendOSC(puara_controller::ControllerEvent currentEvent) {
         for (int mappingID : osc_trigger[currentEvent.eventName]) {
             std::vector<int> controllerIDs;
             if (osc_mappings[mappingID].controller_id == -1) {
+                // JM: I can imagine some interesting code with std::ranges here
                 for (const auto& pair : puara_controller::controllers) {
                     controllerIDs.push_back(pair.first);
                 }
@@ -294,6 +309,8 @@ int sendOSC(puara_controller::ControllerEvent currentEvent) {
                 for (OSCMapping::OSCArguments argument : osc_mappings[mappingID].arguments) {
                     switch (puara_controller::state2int(argument.value)) {
                         case 0:
+                            // JM: I'd recommend to put 
+                            // puara_controller::controllers[controllerID] outside and reuse it every time... 80 characters per line is nice :D
                             msg.add(puara_controller::mapRange(
                                 puara_controller::controllers[controllerID].state[argument.action].value,
                                 0, 1, argument.min, argument.max));
@@ -359,6 +376,12 @@ int sendOSC(puara_controller::ControllerEvent currentEvent) {
 void sendOSCThread() {
     while (puara_controller::keep_running.load()) {
         std::unique_lock<std::mutex> lock(puara_controller::controller_event_mutex);
+        // JM: this is not enough: condition variables are subject to spurious wakeups.
+        // We had a discussion about it with Guillaume the other day: 
+        // https://gitlab.com/sat-mtl/tools/shmdata/-/merge_requests/90#note_1641577001
+        // The other part was on the chat. Basically: you need to use the other overload of 'wait' 
+        // which takes a callback.. otherwise, the condition variable is not really protecting against
+        // anything (unless you encapsulate it in your own while()... looop to check if a new event happened
         puara_controller::controller_event.wait(lock);
         sendOSC(puara_controller::currentEvent);
     }

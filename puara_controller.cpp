@@ -12,6 +12,10 @@
 
 namespace puara_controller {
 
+// JM: Internal data like this can be enclosed in an anonymous namespace
+// to avoid them being visible to the public (and enabling more compiler optimizations)
+//: namespace { ... }
+
     // Default values
     std::string identifier = "puaracontroller";
     bool verbose = true;
@@ -32,6 +36,14 @@ namespace puara_controller {
 
     std::unordered_map<int, Controller> controllers;
 
+    // JM: Okay, if this is actually all known before hand we can use something much better than 
+    // a std::unordered_map : in traditional GNU code one would have used 
+    // gperf to pregenerate a perfect hash table, but in C++ nowadays we can use something like 
+    // https://github.com/serge-sans-paille/frozen/blob/master/include/frozen/unordered_map.h 
+    // which does it automatically.
+    // Also very important: if it's not going to move it should be const!
+    // Otherwise you can risk adding a value you don't want by using the [] operator, e.g.
+    // SDL2Name[someNewEvent] 
     std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name = {
         {"events",{ /* Supported Puara Controller SDL events */
             {SDL_EVENT_GAMEPAD_ADDED,"added"},
@@ -90,6 +102,8 @@ namespace puara_controller {
         }}
     };
 
+    // JM: same (though for this size I'dd use a std::array and linear std::find, 
+    // for less than 10 elements in general it's the fastest and shortest approach)
     std::unordered_map<std::string, int> State2int = {
         {"value",0},
         {"duration",1},
@@ -113,6 +127,8 @@ namespace puara_controller {
     }
 
     int start() {
+        // JM: In general you'd want a proper logging framework where you can easily
+        // disable logging if you don't want it, spdlog is recommended (used already in Scenic, ossia, haptic floor...) 
         std::cout << "Starting Puara Controller..." << std::endl;
         if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR) < 0) {
             std::cerr << "Could not initialize SDL: " << SDL_GetError() << std::endl;
@@ -120,6 +136,8 @@ namespace puara_controller {
         } else {
             if (verbose) std::cout << "SDL initialized successfully" << std::endl;
         }
+        // JM: Okay, this design from a cursory glance necessitates a larger review :) I think you really want a proper task graph here
+        // see e.g. cpp taskflow
         threads.emplace_back(pullControllerEventThread);
         if (print_events) {
             threads.emplace_back(printEventThread);
@@ -131,6 +149,8 @@ namespace puara_controller {
 
     // freq = floats from 0 to 1, time in ms
     int rumble(int controllerID, int time, float lowFreq, float hiFreq) {
+        // JM: if controllers.size() == 0 then (controllers.size()-1) == 4 billion due to unsigned underflow
+        // which can lead to "fun" behaviours
         int rangedControllerID = clip_(controllerID, 0, (controllers.size()-1));
         int rangedTime = clip_(time, 100, 10000);
         float rangedLowFreq = clip_(lowFreq, 0.0f, 1.0f) * 65535;
@@ -144,12 +164,15 @@ namespace puara_controller {
         if (SDL_IsGamepad(joy_index)) {
             std::cout << "New game controller found. Opening..." << std::endl;
             controllers.emplace(joy_index, Controller());
+            // JM: Instead of doing a hash lookup each time you can use the return value of emplace directly,
+            // it's an iterator to the emplaced value
             controllers[joy_index].id = joy_index;
             controllers[joy_index].instance = SDL_OpenGamepad(joy_index);
             controllers[joy_index].is_open = true;
             std::cout << "\nController \""<< SDL_GetGamepadInstanceName(joy_index)
                       << "\" (" << joy_index << ") " << "opened successfully" << std::endl;
             if (enableMotion) {
+                 // JM: spdlog wold allow to set log levels to avoid the if(verbose) :)
                 if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_GYRO, SDL_TRUE) < 0)
                     if (verbose) std::cout << "Could not enable the gyroscope for this controller" << std::endl;
                 if (SDL_SetGamepadSensorEnabled(controllers[joy_index].instance, SDL_SENSOR_ACCEL, SDL_TRUE) < 0)
@@ -178,6 +201,8 @@ namespace puara_controller {
         }
     }
 
+    // JM: C++ has std::clamp which is a generic implementation of this.
+    // See also a tiny bit more optimized version in ossia/detail/math.hpp (ossia::clamp) which uses std::fma
     float clip_(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
     }
@@ -187,6 +212,7 @@ namespace puara_controller {
     }
 
     double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value) {
+        // JM: in_max - in_min == 0 -> crash
         double mappedValue = ((in - in_min) / (in_max - in_min)) * (out_max - out_min) + out_min;
         if (mappedValue >= dead_zone_min && mappedValue <= dead_zone_max)
             mappedValue = dead_zone_value;
@@ -194,6 +220,9 @@ namespace puara_controller {
     }
 
     int applyAnalogDeadZone(int in) {
+        // JM: I remember that to have something centered properly when you have 16 bit values
+        // you need to add a -0.5f factor somewhere but I forgot, will investigate.
+        // Doesn' matter too much with the deadzone though I think... 
         return applyDeadZone_(static_cast<double>(in), -32768.0, 32768.0, -32768.0, 32768.0, static_cast<double>(analogDeadZone*-1), static_cast<double>(analogDeadZone), 0.0);
     }
 
@@ -201,8 +230,12 @@ namespace puara_controller {
         if (event.type == SDL_EVENT_QUIT) {
             quit();
         } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
-            openController(event.gdevice.which);
+            openController(event.gdevice.which); // shouldn't there be a return in this case and the one above?
         }
+        // JM: are we sure controllers isn't being used in another thread in this function?
+        // I recommend running with -fsanitize=address -fsanitize=undefined first, and then making another build 
+        // with -fsanitize=thread. First with gcc and then with clang.
+        // Also look up clang thread-safety annotations. 
         switch (event.type) {
             case SDL_EVENT_GAMEPAD_REMOVED: case SDL_EVENT_JOYSTICK_REMOVED:
                     SDL_CloseGamepad(controllers[event.gdevice.which].instance);
@@ -214,6 +247,8 @@ namespace puara_controller {
                 controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]].value = event.gbutton.state;
                 currentEvent.eventAction = event.gbutton.button;
                 currentEvent.eventName = SDL2Name["button"][event.gbutton.button];
+                // That's a lot of lookup, I'd just take a reference to   controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]] 
+                // and work on that
                 controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]].event_duration = nano2mili(event.gbutton.timestamp - controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]].event_timestamp);
                 controllers[event.gdevice.which].state[SDL2Name["button"][event.gbutton.button]].event_timestamp = event.gbutton.timestamp;
                 break;
@@ -223,7 +258,7 @@ namespace puara_controller {
                         if (applyAnalogDeadZone(event.gaxis.value) == controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X) return 1;
                         controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].X = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].X = applyAnalogDeadZone(event.gaxis.value);
                         if ( isSensorChanged(event.gdevice.which, event.gaxis.axis, "analog") ) {
-                            controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp);
+                            controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_duration = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_duration = nano2mili(event.gaxis.timestamp - controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp); // 357 line length is not too great for readability
                             controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTX]].event_timestamp = controllers[event.gdevice.which].state[SDL2Name["axis"][SDL_GAMEPAD_AXIS_LEFTY]].event_timestamp = event.gaxis.timestamp;
                         }
                         break;
@@ -275,6 +310,15 @@ namespace puara_controller {
                 currentEvent.eventAction = 0;
                 currentEvent.touchID = event.gtouchpad.touchpad;
                 currentEvent.eventName = SDL2Name["touch"][currentEvent.eventAction];
+                // JM: std::to_string can be pretty slow, it touches locale and all this. 
+                // Check out std::from_chars / to_chars (and do it only once, even then it's a complex algorithm.
+                // Or better, precompute a small table of numbers from 0 to 255? :)
+                // JM: also.. here's how I'd write it: 
+                // controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)] = { 
+                //     .action = event.gtouchpad.type
+                //   , .event = event.gtouchpad.touchpad 
+                //   , .finger = ...
+                // };
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].action = event.gtouchpad.type;
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].touchpad = event.gtouchpad.touchpad;
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].finger = event.gtouchpad.finger;
@@ -286,7 +330,7 @@ namespace puara_controller {
                     controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].event_timestamp = event.gtouchpad.timestamp;
                 }
                 controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_X = event.gtouchpad.x;
-                controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_Y = event.gtouchpad.y;
+                controllers[event.gdevice.which].state[std::to_string(event.gtouchpad.touchpad)].last_Y = event.gtouchpad.y; // Is it normal that it's the same?
                 break;
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                 if (event.gsensor.sensor == SDL_SENSOR_ACCEL) {
@@ -478,7 +522,21 @@ namespace puara_controller {
 
     bool isSensorChanged(int joy_index, int axis, std::string sensorType) {
         bool convertedValue = false;
-        bool answer;
+        bool answer; // JM: initialization
+        // JM: let's look how his code looks if we use some variables:
+
+
+        if (sensorType == "trigger") {
+            auto& axis = controllers[joy_index].state[SDL2Name["axis"][axis]];
+            if (axis.value != 0) 
+              convertedValue = true;
+
+            answer = convertedValue != axis.state;
+            
+            if (answer) 
+              axis.state = !axis.state; 
+        }
+
         if (sensorType == "trigger") {
             if (controllers[joy_index].state[SDL2Name["axis"][axis]].value != 0) {convertedValue = true;}
             answer = convertedValue != controllers[joy_index].state[SDL2Name["axis"][axis]].state;
@@ -498,11 +556,13 @@ namespace puara_controller {
             }
             answer = convertedValue != controllers[joy_index].state[std::to_string(axis)].state;
             if (answer) {controllers[joy_index].state[std::to_string(axis)].state = !controllers[joy_index].state[std::to_string(axis)].state;}
-        }
+        } // Unhandled new sensorType that comes up in a new SDL version: we return an uninitialized value
+        // The best in this case is to return an std::optional though I'd saay?
         return answer;
     }
 
     int nano2mili(Uint64 ns) {
+        // using namespace std::chrono; in this function is perfectly fine
         return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(ns)).count());
     }
 
