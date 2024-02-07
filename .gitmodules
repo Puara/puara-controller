@@ -8,3 +8,6 @@
 [submodule "include/liblo"]
 	path = include/liblo
 	url = https://github.com/radarsat1/liblo.git
+[submodule "include/frozen"]
+	path = include/frozen
+	url = https://github.com/serge-sans-paille/frozen.git
