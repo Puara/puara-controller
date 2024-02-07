@@ -1,5 +1,5 @@
 //****************************************************************************//
-// Puara Controller module - connect with game controllers using SDL2 (hpp)   //
+// Puara Controller module - connect with game controllers using SDL3 (hpp)   //
 //                         Controller -> OSC/MIDI bridge                      //
 // https://github.com/Puara/puara-controller                                  //
 // Metalab - Société des Arts Technologiques (SAT)                            //
@@ -13,6 +13,7 @@
 
 #include "SDL.h"
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <thread>
 #include <atomic>
@@ -22,18 +23,103 @@
 #include <cmath>
 #include <cstdint>
 #include <chrono>
+#include <frozen/unordered_map.h>
+#include <frozen/string.h>
 
 
 namespace puara_controller {
-        
+    
+    constexpr frozen::unordered_map<int, const char*, 9> event2Name = { /* Supported Puara Controller SDL events */
+        {SDL_EVENT_GAMEPAD_ADDED,"added"},
+        {SDL_EVENT_GAMEPAD_REMOVED,"removed"},
+        {SDL_EVENT_GAMEPAD_BUTTON_DOWN,"button"},
+        {SDL_EVENT_GAMEPAD_BUTTON_UP,"button"},
+        {SDL_EVENT_GAMEPAD_AXIS_MOTION,"axis"},
+        {SDL_EVENT_GAMEPAD_SENSOR_UPDATE,"motion"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN,"touch"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION,"touch"},
+        {SDL_EVENT_GAMEPAD_TOUCHPAD_UP,"touch"}
+    };
+    constexpr frozen::unordered_map<int, const char*, 23> button2Name = { /* This list is generated from SDL_GameControllerButton */
+        {SDL_GAMEPAD_BUTTON_INVALID,"invalid"},
+        {SDL_GAMEPAD_BUTTON_SOUTH,"A"},
+        {SDL_GAMEPAD_BUTTON_EAST,"B"},
+        {SDL_GAMEPAD_BUTTON_WEST,"X"},
+        {SDL_GAMEPAD_BUTTON_NORTH,"Y"},
+        {SDL_GAMEPAD_BUTTON_BACK,"back"},
+        {SDL_GAMEPAD_BUTTON_GUIDE,"guide"},
+        {SDL_GAMEPAD_BUTTON_START,"start"},
+        {SDL_GAMEPAD_BUTTON_LEFT_STICK,"leftstick"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_STICK,"rightstick"},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,"leftshoulder"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,"rightshoulder"},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP,"dpad_up"},
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN,"dpad_down"},
+        {SDL_GAMEPAD_BUTTON_DPAD_LEFT,"dpad_left"},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT,"dpad_right"},
+        {SDL_GAMEPAD_BUTTON_MISC1, "misc1"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1,"paddle1"},
+        {SDL_GAMEPAD_BUTTON_LEFT_PADDLE1,"paddle2"},
+        {SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2,"paddle3"},
+        {SDL_GAMEPAD_BUTTON_LEFT_PADDLE2,"paddle4"},
+        {SDL_GAMEPAD_BUTTON_TOUCHPAD,"touchpadbutton"},
+        {SDL_GAMEPAD_BUTTON_MAX,"max_btn"}
+    };
+    constexpr frozen::unordered_map<int, const char*, 8> axis2Name = { /* This list is generated from SDL_GamepadAxis */
+        {SDL_GAMEPAD_AXIS_INVALID,"invalid"},
+        {SDL_GAMEPAD_AXIS_LEFTX,"analogleft"},
+        {SDL_GAMEPAD_AXIS_LEFTY,"analogleft"},
+        {SDL_GAMEPAD_AXIS_RIGHTX,"analogright"},
+        {SDL_GAMEPAD_AXIS_RIGHTY,"analogright"},
+        {SDL_GAMEPAD_AXIS_LEFT_TRIGGER,"triggerleft"},
+        {SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,"triggerright"},
+        {SDL_GAMEPAD_AXIS_MAX,"max_axis"}
+    };
+    constexpr frozen::unordered_map<int, const char*, 4> motion2Name = { /* This list is generated from SDL_SensorType */
+        {SDL_SENSOR_INVALID,"invalid"},
+        {SDL_SENSOR_UNKNOWN,"unknown"},
+        {SDL_SENSOR_ACCEL,"accel"},
+        {SDL_SENSOR_GYRO,"gyro"}
+    };
+    // constexpr frozen::unordered_map<int, const char*, 1> touch2Name = { /* This list allows pushing the sensor name for the touchpad */
+    //         {0,"touch"}
+    // };
+
+    constexpr std::array<char,10> touchId2Name = {'0','1','2','3','4','5','6','7','8','9'};
+
+    const std::array<std::string,10> State2intArray = {
+        "value",
+        "duration",
+        "timestamp",
+        "state",
+        "X",
+        "Y",
+        "Z",
+        "touchpad",
+        "finger",
+        "pressure"
+    };
+    
+    // std::unordered_map<std::string, int> State2int = {
+    //     {"value",0},
+    //     {"duration",1},
+    //     {"timestamp",2},
+    //     {"state",3},
+    //     {"X",4},
+    //     {"Y",5},
+    //     {"Z",6},
+    //     {"touchpad",7},
+    //     {"finger",8},
+    //     {"pressure",9}
+    // };
+
     struct ControllerEvent {
         unsigned int controller; 
         unsigned int eventType; 
-        int eventAction; 
-        int touchID;
+        int eventAction;
+        std::string touchID;
         std::string eventName;
     };
-
     extern ControllerEvent currentEvent;
 
     extern std::atomic<bool> keep_running;
@@ -107,28 +193,33 @@ namespace puara_controller {
         public:
             Controller() = default;
             Controller(int id, SDL_Gamepad* instance, int move_buffer_size);
-            //ControllerState state;
             std::unordered_map<std::string, ControllerState> state;
             CircularBuffer<ControllerState> discrete_buffer;
-            bool is_open;
-            int id;
+            bool is_open = false;
+            int id = -1;
             SDL_Gamepad* instance;
             
     };
 
     extern std::unordered_map<int, Controller> controllers;
-    extern std::unordered_map<std::string, std::unordered_map<int, std::string>> SDL2Name;
-    extern std::unordered_map<std::string, int> State2int;
-    int state2int(std::string state);
+    // inline constexpr frozen::unordered_map<int, const char*, 9> event2Name;
+    // inline constexpr frozen::unordered_map<int, const char*, 23> button2Name;
+    // inline constexpr frozen::unordered_map<int, const char*, 8> axis2Name;
+    // inline constexpr frozen::unordered_map<int, const char*, 4> motion2Name;
+    // inline constexpr frozen::unordered_map<int, const char*, 1> touch2Name;
+    // extern std::unordered_map<std::string, int> State2int;
+    //int state2int(std::string state);
+    int state2int(const std::string& state);
 
-    extern std::int32_t elapsed_time_;
-    float clip_(float n, float lower, float upper);
-    int clip_(int n, int lower, int upper);
+    // Auxiliary functions and declarations
+    extern std::int32_t elapsed_time;
+    float clip(float n, float lower, float upper);
+    int clip(int n, int lower, int upper);
     int nano2mili(Uint64 ns);
     std::string replaceID(std::string str, int newID);
-    double applyDeadZone_(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
+    double applyDeadZone(double in, double in_min, double in_max, double out_min, double out_max, double dead_zone_min, double dead_zone_max, double dead_zone_value);
     int applyAnalogDeadZone(int in);
-    bool isSensorChanged(int joy_index, int axis, std::string sensor);
+    bool isSensorChanged(int joy_index, int axis, int sensor);
 };
 
 #endif

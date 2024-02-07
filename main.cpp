@@ -36,7 +36,7 @@ int osc_client_port;
 std::condition_variable cv;
 std::mutex mtx;
 lo::ServerThread osc_server(osc_server_port);
-lo::Address osc_sender(osc_client_address, osc_client_port);
+// lo::Address osc_sender(osc_client_address, osc_client_port);
 std::vector<std::thread> threads;
 
 struct OSCMapping {
@@ -237,6 +237,7 @@ int libloServerMethods(){
         return 0;
 }
 
+// To send to Puara-gestures:
 // High-level gesture draft for azimuth
 int calculateAngle(int X, int Y) {
     double x = puara_controller::mapRange(static_cast<double>(X), -32768.0, 32767.0, -1.0, 1.0);
@@ -244,6 +245,66 @@ int calculateAngle(int X, int Y) {
     double azimuth = std::atan2(x, y) * 180 / M_PI;
     return static_cast<int>(azimuth);
 }
+
+// To send to Puara-gestures:
+// integrator
+double dt = 0.05;  // step
+double maxPos = 0.55;
+double minPos = -0.55;
+double velocityLX = 0.0;
+double positionLX = 0.0;
+double velocityLY = 0.0;
+double positionLY = 0.0;
+double velocityRX = 0.0;
+double positionRX = 0.0;
+double velocityRY = 0.0;
+double positionRY = 0.0;
+int integratorFrequency = 30; // hertz
+void updateIntegratorThread(){
+    while (puara_controller::keep_running.load()) {
+        std::unique_lock<std::mutex> lock(puara_controller::controller_event_mutex);
+        puara_controller::controller_event.wait(lock);
+        if (puara_controller::currentEvent.eventType == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
+            switch (puara_controller::currentEvent.eventAction) {
+                case SDL_GAMEPAD_AXIS_LEFTX:
+                    velocityLX = puara_controller::mapRange(puara_controller::controllers[puara_controller::currentEvent.controller].state[puara_controller::currentEvent.eventName].X,-32768.0f,32767.0f,dt*-1,dt);
+                    velocityLX = (velocityLX < (dt*0.2) && velocityLX > (dt*-0.2)) ? 0 : velocityLX;
+                    break;
+                case SDL_GAMEPAD_AXIS_LEFTY:
+                    velocityLY = puara_controller::mapRange(puara_controller::controllers[puara_controller::currentEvent.controller].state[puara_controller::currentEvent.eventName].Y,-32768.0f,32767.0f,dt,dt*-1);
+                    velocityLY = (velocityLY < (dt*0.2) && velocityLY > (dt*-0.2)) ? 0 : velocityLY;
+                    break;
+                case SDL_GAMEPAD_AXIS_RIGHTX:
+                    velocityRX = puara_controller::mapRange(puara_controller::controllers[puara_controller::currentEvent.controller].state[puara_controller::currentEvent.eventName].X,-32768.0f,32767.0f,dt*-1,dt);
+                    velocityRX = (velocityRX < (dt*0.2) && velocityRX > (dt*-0.2)) ? 0 : velocityRX;
+                    break;
+                case SDL_GAMEPAD_AXIS_RIGHTY:
+                    velocityRY = puara_controller::mapRange(puara_controller::controllers[puara_controller::currentEvent.controller].state[puara_controller::currentEvent.eventName].Y,-32768.0f,32767.0f,dt*-1,dt);
+                    velocityRY = (velocityRY < (dt*0.2) && velocityRY > (dt*-0.2)) ? 0 : velocityRY;
+                    break;
+            }
+        }
+    }
+}
+void integratorThread() {
+    while (puara_controller::keep_running.load()) {
+        positionLX += velocityLX;
+        positionLX = std::max(minPos, std::min(positionLX, maxPos));
+        positionLY += velocityLY;
+        positionLY = std::max(minPos, std::min(positionLY, maxPos));
+        positionRX += velocityRX;
+        positionRX = std::max(minPos, std::min(positionRX, maxPos));
+        positionRY += velocityRY;
+        positionRY = std::max(minPos, std::min(positionRY, maxPos));
+        lo::Address osc_sender(osc_client_address, osc_client_port);
+        lo::Message msg;
+        msg.add(static_cast<float>(positionLX));
+        msg.add(static_cast<float>(positionLY));
+        osc_sender.send("/camera/position/xz", msg);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000/integratorFrequency));
+    }
+}
+
 
 enum ArgumentType { Integer, Float, NotANumber };
 
@@ -291,46 +352,58 @@ int sendOSC(puara_controller::ControllerEvent currentEvent) {
             }
             for (int controllerID : controllerIDs) {
                 lo::Message msg;
+                std::string action;
+                float xyzMin;
+                float xyzMax;
                 for (OSCMapping::OSCArguments argument : osc_mappings[mappingID].arguments) {
+                    if (argument.action == "touch") {
+                        action = "0";
+                        xyzMin = 0.0;
+                        xyzMax = 1.0;
+                    } else {
+                        action = argument.action;
+                        xyzMin = -32768.0f;
+                        xyzMax = 32767.0f;
+                    }
                     switch (puara_controller::state2int(argument.value)) {
                         case 0:
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[controllerID].state[argument.action].value,
+                                puara_controller::controllers[controllerID].state[action].value,
                                 0, 1, argument.min, argument.max));
                             break;
                         case 1:
-                            msg.add(puara_controller::controllers[controllerID].state[argument.action].event_duration);
+                            msg.add(puara_controller::controllers[controllerID].state[action].event_duration);
                             break;
                         case 2:
-                            msg.add(static_cast<int64_t>(puara_controller::controllers[controllerID].state[argument.action].event_timestamp));
+                            msg.add(static_cast<int64_t>(puara_controller::controllers[controllerID].state[action].event_timestamp));
                             break;
                         case 3:
-                            msg.add(static_cast<int>(puara_controller::controllers[controllerID].state[argument.action].state));
+                            msg.add(static_cast<int>(puara_controller::controllers[controllerID].state[action].state));
                             break;
                         case 4:
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[controllerID].state[argument.action].X,
-                                -32768.0f, 32767.0f, argument.min, argument.max));
+                                puara_controller::controllers[controllerID].state[action].X,
+                                xyzMin, xyzMax, argument.min, argument.max));
                             break;
                         case 5:
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[controllerID].state[argument.action].Y,
-                                -32768.0f, 32767.0f, argument.min, argument.max));
+                                puara_controller::controllers[controllerID].state[action].Y,
+                                xyzMin, xyzMax, argument.min, argument.max));
                             break;
                         case 6:
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[controllerID].state[argument.action].Z,
-                                -32768.0f, 32767.0f, argument.min, argument.max));
+                                puara_controller::controllers[controllerID].state[action].Z,
+                                xyzMin, xyzMax, argument.min, argument.max));
                             break;
                         case 7:
-                            msg.add(puara_controller::controllers[controllerID].state[argument.action].touchpad);
+                            msg.add(puara_controller::controllers[controllerID].state[action].touchpad);
                             break;
                         case 8:
-                            msg.add(puara_controller::controllers[controllerID].state[argument.action].finger);
+                            msg.add(puara_controller::controllers[controllerID].state[action].finger);
                             break;
                         case 9:
                             msg.add(puara_controller::mapRange(
-                                puara_controller::controllers[controllerID].state[argument.action].pressure,
+                                puara_controller::controllers[controllerID].state[action].pressure,
                                 0.0f, 1.0f, argument.min, argument.max));
                             break;
                         default:
@@ -426,6 +499,8 @@ int main(int argc, char* argv[]) {
     }
 
     threads.emplace_back(sendOSCThread);
+    threads.emplace_back(integratorThread);
+    threads.emplace_back(updateIntegratorThread);
 
     {
         std::unique_lock<std::mutex> lock(mtx);

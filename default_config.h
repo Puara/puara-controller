@@ -251,11 +251,10 @@ const char* defaultConfig = R"(
             "arguments": [
                 {"action": "touch", "value": "X", "min": 0.0, "max": 1.0},
                 {"action": "touch", "value": "Y", "min": 0.0, "max": 1.0},
-                {"action": "touch", "value": "Z", "min": 0.0, "max": 1.0},
-                {"action": "touch", "value": "touch_id"},
-                {"action": "touch", "value": "finger_id"},
-                {"action": "gyro", "value": "duration"},
-                {"action": "gyro", "value": "timestamp"}
+                {"action": "touch", "value": "touchpad"},
+                {"action": "touch", "value": "finger"},
+                {"action": "touch", "value": "duration"},
+                {"action": "touch", "value": "timestamp"}
             ]
         }
     ],
