@@ -1,15 +1,20 @@
+
+#ifndef DEFAULT_CONFIG_H
+#define DEFAULT_CONFIG_H
+
+const char* defaultConfig = R"(
 {
     "config": {
         "polling_frequency": 1000,
         "analog_dead_zone": 2000,
-        "disable_motion": true,
+        "disable_motion": false,
         "verbose": false,
         "print_events": false,
         "print_motion_data": false,
         "osc_namespace": "puaracontroller",
         "osc_server_port": 9000,
         "osc_client_address": "localhost",
-        "osc_client_port": 54321
+        "osc_client_port": 9001
     },
     "osc": [
         {
@@ -305,3 +310,6 @@
         }
     ]
 }
+)";
+
+#endif

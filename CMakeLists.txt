@@ -17,6 +17,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/jsoncpp/include 
     ${CMAKE_CURRENT_BINARY_DIR}/include/liblo/cmake 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/liblo 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/frozen/include 
 )
 
 target_link_libraries(${PROJECT_NAME} SDL3-static jsoncpp_static liblo_static)
